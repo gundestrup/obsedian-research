@@ -1,0 +1,11 @@
+{
+	"id": "obsidian-pubmed-fetcher",
+	"name": "PubMed Article Fetcher",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Fetch article metadata from PubMed ID or DOI links",
+	"author": "Svend Gundestrup",
+	"authorUrl": "https://github.com/gundestrup/obsedian-research",
+	"fundingUrl": "",
+	"isDesktopOnly": false
+}
