@@ -30,14 +30,15 @@ module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
   apiKey: "",
-  articleType: "Article"
+  articleType: "Article",
+  enableGlobalCommand: false
 };
 var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
   async onload() {
     await this.loadSettings();
     this.addCommand({
-      id: "fetch-article",
-      name: "Fetch Article from PubMed/DOI",
+      id: "fetch-article-note",
+      name: "PubMed Article Fetcher Note - Create new note with article info",
       callback: () => {
         new ArticleInputModal(this.app, this.settings, (input) => {
           this.fetchArticle(input);
@@ -45,8 +46,8 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
       }
     });
     this.addCommand({
-      id: "fetch-article-from-selection",
-      name: "Fetch Article from Selected PubMed/DOI",
+      id: "fetch-article-selected",
+      name: "PubMed Article Fetcher Link Selected - Update selected link only",
       editorCallback: (editor, view) => {
         const selection = editor.getSelection().trim();
         if (selection) {
@@ -56,12 +57,30 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
         }
       }
     });
+    this.addCommand({
+      id: "fetch-article-all",
+      name: "PubMed Article Fetcher Link All - Update all links in current note only",
+      editorCallback: (editor, view) => {
+        this.fetchAllArticlesInNote(editor);
+      }
+    });
+    if (this.settings.enableGlobalCommand) {
+      this.addCommand({
+        id: "fetch-article-global",
+        name: "PubMed Article Fetcher Link Global - Update all links in all notes",
+        callback: async () => {
+          new FolderSelectionModal(this.app, async (selectedFolder) => {
+            await this.fetchAllArticlesInVault(selectedFolder);
+          }).open();
+        }
+      });
+    }
     this.registerEvent(
       this.app.workspace.on("editor-menu", (menu, editor, view) => {
         const selection = editor.getSelection().trim();
-        if (selection && (this.extractPubMedId(selection) || this.extractDOI(selection))) {
+        if (selection && (this.extractPubMedId(selection) || this.extractDOI(selection) || this.extractPMCId(selection))) {
           menu.addItem((item) => {
-            item.setTitle("Fetch Article Info").setIcon("download").onClick(() => {
+            item.setTitle("PubMed Article Fetcher Link Selected").setIcon("download").onClick(() => {
               this.fetchArticleAndInsert(selection, editor);
             });
           });
@@ -78,6 +97,55 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
+  handleError(error, context) {
+    console.error(`Error in ${context}:`, error);
+    const message = error instanceof Error ? error.message : "Unknown error occurred";
+    new import_obsidian.Notice(`Error fetching article: ${message}`);
+  }
+  async delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  isAlreadyCited(content, pubmedId, doi, pmcId, title, year) {
+    if (pubmedId) {
+      const escapedPubmedId = pubmedId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pubmedLinkPattern = new RegExp(`\\[${escapedPubmedId}\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`, "i");
+      if (pubmedLinkPattern.test(content)) return true;
+      const pubmedIdPattern = new RegExp(`\u{1F4DA}.*\\[.*\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`, "i");
+      if (pubmedIdPattern.test(content)) return true;
+    }
+    if (doi) {
+      const cleanDoi = this.cleanDOI(doi);
+      const escapedDoi = cleanDoi.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const doiLinkPattern = new RegExp(`\\[.*\\]\\(https://doi\\.org/${escapedDoi}\\)`, "i");
+      if (doiLinkPattern.test(content)) return true;
+      const doiPattern = new RegExp(`\u{1F517}.*\\[.*\\]\\(https://doi\\.org/${escapedDoi}\\)`, "i");
+      if (doiPattern.test(content)) return true;
+    }
+    if (pmcId) {
+      const escapedPmcId = pmcId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pmcLinkPattern = new RegExp(`\\[\u{1F4C4}\\]\\(https://pmc\\.ncbi\\.nlm\\.nih\\.gov/articles/${escapedPmcId}/?\\)`, "i");
+      if (pmcLinkPattern.test(content)) return true;
+    }
+    if (title && year) {
+      const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const titleYearPattern = new RegExp(`\u{1F4DA}.*${escapedTitle}.*- ${year}.*`, "i");
+      if (titleYearPattern.test(content)) return true;
+    }
+    return false;
+  }
+  hasCitationFormat(content) {
+    const citationPatterns = [
+      // Complete citations with links
+      /📚.*\[.*\]\(https:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/\d+\/?\)/i,
+      /🔗.*\[.*\]\(https:\/\/doi\.org\/10\.\d+\/.+\)/i,
+      /\[📄\]\(https:\/\/pmc\.ncbi\.nlm\.nih\.gov\/articles\/PMC\d+\/?\)/i,
+      // Incomplete citations without links (just the format)
+      /📚.*Journal Article:.*- \d{4},.*🔗?$/i,
+      /📚.*Article:.*- \d{4},.*📄?$/i,
+      /📚.*Review:.*- \d{4},.*$/i
+    ];
+    return citationPatterns.some((pattern) => pattern.test(content));
+  }
   isValidDOI(doi) {
     return /^10\.\d+\/.+$/.test(doi);
   }
@@ -90,10 +158,40 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
     if (/^\d+$/.test(input)) return input;
     return null;
   }
+  extractPMCId(input) {
+    const urlMatch = input.match(/https?:\/\/pmc\.ncbi\.nlm\.nih\.gov\/articles\/(PMC\d+)/);
+    if (urlMatch) return urlMatch[1];
+    const simpleUrlMatch = input.match(/https?:\/\/pmc\.ncbi\.nlm\.nih\.gov\/(PMC\d+)/);
+    if (simpleUrlMatch) return simpleUrlMatch[1];
+    const directMatch = input.match(/^PMC\d+$/);
+    if (directMatch) return input;
+    return null;
+  }
   extractDOI(input) {
-    const doiUrlMatch = input.match(/doi\.org\/(10\.\d+\/.+?)(?:[#?]|$)/);
-    if (doiUrlMatch) return doiUrlMatch[1];
+    const doiUrlMatch = input.match(/doi\.org\/(10\.\d+\/.+?)(?:[#?]|[\s\])]|$)/);
+    if (doiUrlMatch) {
+      let doi = doiUrlMatch[1];
+      if (doi.endsWith(")")) {
+        doi = doi.slice(0, -1);
+      }
+      return doi;
+    }
     if (this.isValidDOI(input)) return input;
+    return null;
+  }
+  async findPubMedIdFromPMC(pmcId) {
+    const cleanPmcId = pmcId.replace(/^PMC/, "");
+    const apiKey = this.settings.apiKey;
+    const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="${pmcId}"[pmcid]&retmode=json${apiKey ? `&api_key=${apiKey}` : ""}`;
+    try {
+      const response = await fetch(url);
+      const json = await response.json();
+      if (json.esearchresult && json.esearchresult.idlist && json.esearchresult.idlist.length > 0) {
+        return json.esearchresult.idlist[0];
+      }
+    } catch (error) {
+      console.error("Error searching PubMed for PMC ID:", error);
+    }
     return null;
   }
   async findPubMedIdFromDOI(doi) {
@@ -121,11 +219,77 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
       return null;
     }
   }
+  parsePubMedResult(result, pubmedId) {
+    var _a;
+    let doi = "";
+    let pmcId = "";
+    if (result.doi) {
+      doi = result.doi;
+    } else if (result.elocationid) {
+      doi = result.elocationid;
+    }
+    if (result.articleids) {
+      const doiObj = result.articleids.find((id) => id.idtype === "doi");
+      if (doiObj && !doi) {
+        doi = this.cleanDOI(doiObj.value);
+      }
+      const pmcObj = result.articleids.find((id) => id.idtype === "pmc");
+      if (pmcObj) {
+        pmcId = pmcObj.value;
+        if (!pmcId.startsWith("PMC")) {
+          pmcId = "PMC" + pmcId;
+        }
+      }
+    }
+    return {
+      title: result.title || "No title available",
+      journal: result.source || result.fulljournalname || "No journal available",
+      year: result.pubdate ? result.pubdate.split(" ")[0] : "No year available",
+      pubmedId,
+      doi,
+      pmcId,
+      articleType: ((_a = result.pubtype) == null ? void 0 : _a[0]) || this.settings.articleType || "Article"
+    };
+  }
+  async fetchPubMedApiData(pubmedId) {
+    var _a;
+    const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
+    const params = new URLSearchParams({
+      db: "pubmed",
+      id: pubmedId,
+      retmode: "json",
+      version: "2.0"
+    });
+    if (this.settings.apiKey) {
+      params.append("api_key", this.settings.apiKey);
+    }
+    const response = await fetch(`${baseUrl}?${params}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    const result = (_a = data.result) == null ? void 0 : _a[pubmedId];
+    if (!result) {
+      throw new Error("Article not found");
+    }
+    return this.parsePubMedResult(result, pubmedId);
+  }
   async fetchArticle(input) {
     const trimmedInput = input.trim();
     const pubmedId = this.extractPubMedId(trimmedInput);
     if (pubmedId) {
       await this.fetchByPubMedId(pubmedId);
+      return;
+    }
+    const pmcId = this.extractPMCId(trimmedInput);
+    if (pmcId) {
+      new import_obsidian.Notice(`PMC ID found: ${pmcId}. Searching for corresponding PubMed ID...`);
+      const pubmedId2 = await this.findPubMedIdFromPMC(pmcId);
+      if (pubmedId2) {
+        await this.fetchByPubMedIdWithPMC(pubmedId2, pmcId);
+      } else {
+        new import_obsidian.Notice("Could not find PubMed ID for the given PMC ID.");
+      }
       return;
     }
     const doi = this.extractDOI(trimmedInput);
@@ -147,6 +311,18 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
       await this.fetchByPubMedIdAndInsert(pubmedId, editor);
       return;
     }
+    const pmcId = this.extractPMCId(trimmedInput);
+    if (pmcId) {
+      const pubmedId2 = await this.findPubMedIdFromPMC(pmcId);
+      if (pubmedId2) {
+        const articleInfo = await this.fetchPubMedApiData(pubmedId2);
+        articleInfo.pmcId = pmcId;
+        this.insertArticleInfo(articleInfo, editor);
+      } else {
+        new import_obsidian.Notice("Could not find PubMed ID for the given PMC ID.");
+      }
+      return;
+    }
     const doi = this.extractDOI(trimmedInput);
     if (doi) {
       const pubmedId2 = await this.findPubMedIdFromDOI(doi);
@@ -157,164 +333,70 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
       }
       return;
     }
-    new import_obsidian.Notice("Invalid input. Please enter a valid PubMed ID, DOI, or URL.");
+    new import_obsidian.Notice("Invalid input. Please enter a valid PubMed ID, PMC ID, DOI, or URL.");
   }
   async fetchByPubMedId(pubmedId) {
-    var _a, _b;
     try {
       new import_obsidian.Notice("Fetching article from PubMed...");
-      const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
-      const params = new URLSearchParams({
-        db: "pubmed",
-        id: pubmedId,
-        retmode: "json",
-        version: "2.0"
-      });
-      if (this.settings.apiKey) {
-        params.append("api_key", this.settings.apiKey);
-      }
-      const response = await fetch(`${baseUrl}?${params}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const result = (_a = data.result) == null ? void 0 : _a[pubmedId];
-      if (!result) {
-        throw new Error("Article not found");
-      }
-      let doi = "";
-      if (result.doi) {
-        doi = result.doi;
-      } else if (result.elocationid) {
-        doi = result.elocationid;
-      } else if (result.articleids) {
-        const doiObj = result.articleids.find((id) => id.idtype === "doi");
-        if (doiObj) {
-          doi = this.cleanDOI(doiObj.value);
-        }
-      }
-      const articleInfo = {
-        title: result.title || "No title available",
-        journal: result.source || result.fulljournalname || "No journal available",
-        year: result.pubdate ? result.pubdate.split(" ")[0] : "No year available",
-        pubmedId,
-        doi,
-        articleType: ((_b = result.pubtype) == null ? void 0 : _b[0]) || this.settings.articleType || "Article"
-      };
+      const articleInfo = await this.fetchPubMedApiData(pubmedId);
       this.displayArticleInfo(articleInfo);
     } catch (error) {
-      console.error("Error fetching PubMed article:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      new import_obsidian.Notice(`Error fetching article: ${errorMessage}`);
+      this.handleError(error, "fetchByPubMedId");
     }
   }
   async fetchByPubMedIdAndInsert(pubmedId, editor) {
-    var _a, _b;
     try {
       new import_obsidian.Notice("Fetching article from PubMed...");
-      const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
-      const params = new URLSearchParams({
-        db: "pubmed",
-        id: pubmedId,
-        retmode: "json",
-        version: "2.0"
-      });
-      if (this.settings.apiKey) {
-        params.append("api_key", this.settings.apiKey);
-      }
-      const response = await fetch(`${baseUrl}?${params}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const result = (_a = data.result) == null ? void 0 : _a[pubmedId];
-      if (!result) {
-        throw new Error("Article not found");
-      }
-      let doi = "";
-      if (result.doi) {
-        doi = result.doi;
-      } else if (result.elocationid) {
-        doi = result.elocationid;
-      } else if (result.articleids) {
-        const doiObj = result.articleids.find((id) => id.idtype === "doi");
-        if (doiObj) {
-          doi = this.cleanDOI(doiObj.value);
-        }
-      }
-      const articleInfo = {
-        title: result.title || "No title available",
-        journal: result.source || result.fulljournalname || "No journal available",
-        year: result.pubdate ? result.pubdate.split(" ")[0] : "No year available",
-        pubmedId,
-        doi,
-        articleType: ((_b = result.pubtype) == null ? void 0 : _b[0]) || this.settings.articleType || "Article"
-      };
+      const articleInfo = await this.fetchPubMedApiData(pubmedId);
       this.insertArticleInfo(articleInfo, editor);
     } catch (error) {
-      console.error("Error fetching PubMed article:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      new import_obsidian.Notice(`Error fetching article: ${errorMessage}`);
+      this.handleError(error, "fetchByPubMedIdAndInsert");
     }
   }
-  async fetchByDOI(doi) {
+  async fetchDOIApiData(doi) {
     var _a, _b, _c, _d, _e, _f, _g;
+    const baseUrl = "https://api.crossref.org/works/" + encodeURIComponent(doi);
+    const response = await fetch(baseUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    const message = data.message;
+    if (!message) {
+      throw new Error("Article not found");
+    }
+    return {
+      title: ((_a = message.title) == null ? void 0 : _a[0]) || "No title available",
+      journal: ((_b = message["short-container-title"]) == null ? void 0 : _b[0]) || ((_c = message["container-title"]) == null ? void 0 : _c[0]) || "No journal available",
+      year: ((_g = (_f = (_e = (_d = message.created) == null ? void 0 : _d["date-parts"]) == null ? void 0 : _e[0]) == null ? void 0 : _f[0]) == null ? void 0 : _g.toString()) || "No year available",
+      doi,
+      pubmedId: void 0,
+      // DOI-only articles don't have PubMed ID
+      pmcId: void 0,
+      // DOI-only articles don't have PMC ID
+      articleType: message.type || this.settings.articleType || "Article"
+    };
+  }
+  async fetchByDOI(doi) {
     try {
       new import_obsidian.Notice("Fetching article from DOI...");
-      const baseUrl = "https://api.crossref.org/works/" + encodeURIComponent(doi);
-      const response = await fetch(baseUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const message = data.message;
-      if (!message) {
-        throw new Error("Article not found");
-      }
-      const articleInfo = {
-        title: ((_a = message.title) == null ? void 0 : _a[0]) || "No title available",
-        journal: ((_b = message["short-container-title"]) == null ? void 0 : _b[0]) || ((_c = message["container-title"]) == null ? void 0 : _c[0]) || "No journal available",
-        year: ((_g = (_f = (_e = (_d = message.created) == null ? void 0 : _d["date-parts"]) == null ? void 0 : _e[0]) == null ? void 0 : _f[0]) == null ? void 0 : _g.toString()) || "No year available",
-        doi,
-        articleType: message.type || this.settings.articleType || "Article"
-      };
+      const articleInfo = await this.fetchDOIApiData(doi);
       this.displayArticleInfo(articleInfo);
     } catch (error) {
-      console.error("Error fetching DOI article:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      new import_obsidian.Notice(`Error fetching article: ${errorMessage}`);
+      this.handleError(error, "fetchByDOI");
     }
   }
   async fetchByDOIAndInsert(doi, editor) {
-    var _a, _b, _c, _d, _e, _f, _g;
     try {
       new import_obsidian.Notice("Fetching article from DOI...");
-      const baseUrl = "https://api.crossref.org/works/" + encodeURIComponent(doi);
-      const response = await fetch(baseUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const message = data.message;
-      if (!message) {
-        throw new Error("Article not found");
-      }
-      const articleInfo = {
-        title: ((_a = message.title) == null ? void 0 : _a[0]) || "No title available",
-        journal: ((_b = message["short-container-title"]) == null ? void 0 : _b[0]) || ((_c = message["container-title"]) == null ? void 0 : _c[0]) || "No journal available",
-        year: ((_g = (_f = (_e = (_d = message.created) == null ? void 0 : _d["date-parts"]) == null ? void 0 : _e[0]) == null ? void 0 : _f[0]) == null ? void 0 : _g.toString()) || "No year available",
-        doi,
-        articleType: message.type || this.settings.articleType || "Article"
-      };
+      const articleInfo = await this.fetchDOIApiData(doi);
       this.insertArticleInfo(articleInfo, editor);
     } catch (error) {
-      console.error("Error fetching DOI article:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      new import_obsidian.Notice(`Error fetching article: ${errorMessage}`);
+      this.handleError(error, "fetchByDOIAndInsert");
     }
   }
   async displayArticleInfo(info) {
-    const link = info.pubmedId ? `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/` : `https://doi.org/${this.cleanDOI(info.doi || "")}`;
+    const link = info.pmcId ? `https://pmc.ncbi.nlm.nih.gov/articles/${info.pmcId}/` : info.pubmedId ? `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/` : `https://doi.org/${this.cleanDOI(info.doi || "")}`;
     const content = `# ${info.title}
 
 **Journal:** ${info.journal}  
@@ -340,98 +422,341 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
     new import_obsidian.Notice(`Article information saved to ${fileName}`);
   }
   insertArticleInfo(info, editor) {
-    const type = info.articleType || "Article";
-    if (info.pubmedId && info.doi) {
-      const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
-      const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
-      const citation = `\u{1F4DA} ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [\u{1F517}](${doiLink})`;
-      editor.replaceSelection(citation);
-    } else if (info.pubmedId) {
-      const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
-      const citation = `\u{1F4DA} ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
-      editor.replaceSelection(citation);
-    } else if (info.doi) {
-      const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
-      const citation = `\u{1F517} ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
-      editor.replaceSelection(citation);
-    }
+    const citation = this.formatCitation(info);
+    editor.replaceSelection(citation);
     new import_obsidian.Notice("Article information inserted");
   }
-  async fetchByPubMedIdWithDOI(pubmedId, doi) {
-    var _a, _b;
+  async fetchByPubMedIdWithPMC(pubmedId, pmcId) {
     try {
       new import_obsidian.Notice("Fetching article from PubMed...");
-      const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
-      const params = new URLSearchParams({
-        db: "pubmed",
-        id: pubmedId,
-        retmode: "json",
-        version: "2.0"
-      });
-      if (this.settings.apiKey) {
-        params.append("api_key", this.settings.apiKey);
-      }
-      const response = await fetch(`${baseUrl}?${params}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const result = (_a = data.result) == null ? void 0 : _a[pubmedId];
-      if (!result) {
-        throw new Error("Article not found");
-      }
-      const articleInfo = {
-        title: result.title || "No title available",
-        journal: result.source || result.fulljournalname || "No journal available",
-        year: result.pubdate ? result.pubdate.split(" ")[0] : "No year available",
-        pubmedId,
-        doi,
-        articleType: ((_b = result.pubtype) == null ? void 0 : _b[0]) || this.settings.articleType || "Article"
-      };
+      const articleInfo = await this.fetchPubMedApiData(pubmedId);
+      articleInfo.pmcId = pmcId;
       this.displayArticleInfo(articleInfo);
     } catch (error) {
-      console.error("Error fetching PubMed article:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      new import_obsidian.Notice(`Error fetching article: ${errorMessage}`);
+      this.handleError(error, "fetchByPubMedIdWithPMC");
+    }
+  }
+  async fetchByPubMedIdWithDOI(pubmedId, doi) {
+    try {
+      new import_obsidian.Notice("Fetching article from PubMed...");
+      const articleInfo = await this.fetchPubMedApiData(pubmedId);
+      articleInfo.doi = doi;
+      this.displayArticleInfo(articleInfo);
+    } catch (error) {
+      this.handleError(error, "fetchByPubMedIdWithDOI");
     }
   }
   async fetchByPubMedIdAndInsertWithDOI(pubmedId, doi, editor) {
-    var _a, _b;
     try {
       new import_obsidian.Notice("Fetching article from PubMed...");
-      const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
-      const params = new URLSearchParams({
-        db: "pubmed",
-        id: pubmedId,
-        retmode: "json",
-        version: "2.0"
-      });
-      if (this.settings.apiKey) {
-        params.append("api_key", this.settings.apiKey);
-      }
-      const response = await fetch(`${baseUrl}?${params}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const result = (_a = data.result) == null ? void 0 : _a[pubmedId];
-      if (!result) {
-        throw new Error("Article not found");
-      }
-      const articleInfo = {
-        title: result.title || "No title available",
-        journal: result.source || result.fulljournalname || "No journal available",
-        year: result.pubdate ? result.pubdate.split(" ")[0] : "No year available",
-        pubmedId,
-        doi,
-        articleType: ((_b = result.pubtype) == null ? void 0 : _b[0]) || this.settings.articleType || "Article"
-      };
+      const articleInfo = await this.fetchPubMedApiData(pubmedId);
+      articleInfo.doi = doi;
       this.insertArticleInfo(articleInfo, editor);
     } catch (error) {
-      console.error("Error fetching PubMed article:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      new import_obsidian.Notice(`Error fetching article: ${errorMessage}`);
+      this.handleError(error, "fetchByPubMedIdAndInsertWithDOI");
     }
+  }
+  async fetchAllArticlesInNote(editor) {
+    let content = editor.getValue();
+    const pubmedMatches = content.match(/https?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/\d+\/?/gi) || [];
+    const pmcMatches = content.match(/https?:\/\/pmc\.ncbi\.nlm\.nih\.gov\/(?:articles\/)?PMC\d+\/?/gi) || [];
+    const doiMatches = content.match(/https?:\/\/(?:dx\.)?doi\.org\/10\.\d{4,9}\/[-._;()/:A-Z0-9]+(?=[\s\])]|$)/gi) || [];
+    const pubmedIds = [...new Set(pubmedMatches.map((match) => this.extractPubMedId(match)).filter((id) => id !== null))];
+    const pmcIds = [...new Set(pmcMatches.map((match) => this.extractPMCId(match)).filter((id) => id !== null))];
+    const dois = [...new Set(doiMatches.map((match) => this.extractDOI(match)).filter((id) => id !== null))];
+    const totalLinks = pubmedIds.length + pmcIds.length + dois.length;
+    if (totalLinks === 0) {
+      new import_obsidian.Notice("No PubMed IDs, PMC IDs, or DOIs found in this note");
+      return;
+    }
+    new import_obsidian.Notice(`Found ${totalLinks} links to process in current note...`);
+    let processedCount = 0;
+    for (const pubmedId of pubmedIds) {
+      try {
+        const escapedPubmedId = pubmedId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const quickCheckPattern = new RegExp(`\\[.*\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`, "i");
+        if (quickCheckPattern.test(content)) {
+          console.log(`PubMed ID ${pubmedId} already cited, skipping`);
+          continue;
+        }
+        const info = await this.fetchPubMedApiData(pubmedId);
+        if (info && !this.isAlreadyCited(content, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+          const citation = this.formatCitation(info);
+          const urlPattern = new RegExp(`https?://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${pubmedId}/?`, "gi");
+          content = content.replace(urlPattern, citation);
+          processedCount++;
+        } else if (info && this.isAlreadyCited(content, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+          console.log(`PubMed ID ${pubmedId} already cited (after fetch), skipping`);
+        }
+        await this.delay(350);
+      } catch (error) {
+        console.error(`Error processing PubMed ID ${pubmedId}:`, error);
+      }
+    }
+    for (const pmcId of pmcIds) {
+      try {
+        console.log(`Processing PMC ID: ${pmcId}`);
+        const escapedPmcId = pmcId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const quickCheckPattern = new RegExp(`\\[\u{1F4C4}\\]\\(https://pmc\\.ncbi\\.nlm\\.nih\\.gov/articles/${escapedPmcId}/?\\)`, "i");
+        if (quickCheckPattern.test(content)) {
+          console.log(`  \u23ED\uFE0F  PMC ID ${pmcId} already cited, skipping`);
+          continue;
+        }
+        const pubmedId = await this.findPubMedIdFromPMC(pmcId);
+        console.log(`  Found PubMed ID: ${pubmedId}`);
+        await this.delay(350);
+        if (pubmedId) {
+          const info = await this.fetchPubMedApiData(pubmedId);
+          await this.delay(350);
+          if (info) {
+            console.log(`  Article: ${info.title}`);
+            const articleInfo = {
+              ...info,
+              pmcId
+              // Add PMC ID for proper citation formatting
+            };
+            const alreadyCited = this.isAlreadyCited(content, articleInfo.pubmedId, articleInfo.doi, articleInfo.pmcId, articleInfo.title, articleInfo.year);
+            console.log(`  Already cited: ${alreadyCited}`);
+            if (!alreadyCited) {
+              const citation = this.formatCitation(articleInfo);
+              const urlPattern = new RegExp(`https?://pmc\\.ncbi\\.nlm\\.nih\\.gov/(?:articles/)?${escapedPmcId}/?`, "gi");
+              content = content.replace(urlPattern, citation);
+              processedCount++;
+              console.log(`  \u2705 Processed PMC ${pmcId}`);
+            } else {
+              console.log(`  \u23ED\uFE0F  PMC ID ${pmcId} already cited (after fetch), skipping`);
+            }
+          } else {
+            console.log(`  \u274C No article info found for PubMed ID ${pubmedId}`);
+          }
+        } else {
+          console.log(`  \u274C No PubMed ID found for PMC ${pmcId}`);
+        }
+      } catch (error) {
+        console.error(`\u274C Error processing PMC ID ${pmcId}:`, error);
+      }
+    }
+    for (const doi of dois) {
+      try {
+        const escapedDoi = doi.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const quickCheckPattern = new RegExp(`\\[.*\\]\\(https://doi\\.org/${escapedDoi}\\)`, "i");
+        if (quickCheckPattern.test(content)) {
+          console.log(`DOI ${doi} already cited, skipping`);
+          continue;
+        }
+        const info = await this.fetchDOIApiData(doi);
+        if (!this.isAlreadyCited(content, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+          const citation = this.formatCitation(info);
+          const urlPattern = new RegExp(`https?://(?:dx\\.)?doi\\.org/${escapedDoi}`, "gi");
+          content = content.replace(urlPattern, citation);
+          processedCount++;
+        } else {
+          console.log(`DOI ${doi} already cited (after fetch), skipping`);
+        }
+        await this.delay(350);
+      } catch (error) {
+        console.error(`Error processing DOI ${doi}:`, error);
+      }
+    }
+    if (processedCount > 0) {
+      editor.setValue(content);
+    }
+    new import_obsidian.Notice(`Successfully processed ${processedCount} of ${totalLinks} links in current note`);
+  }
+  async fetchAllArticlesInVault(selectedFolder) {
+    let files = this.app.vault.getMarkdownFiles();
+    if (selectedFolder && selectedFolder !== "/") {
+      files = files.filter((file) => file.path.startsWith(selectedFolder));
+    }
+    if (files.length === 0) {
+      new import_obsidian.Notice(`No markdown files found${selectedFolder ? ` in folder: ${selectedFolder}` : " in vault"}`);
+      return;
+    }
+    const folderInfo = selectedFolder && selectedFolder !== "/" ? ` in folder: ${selectedFolder}` : " in vault";
+    new import_obsidian.Notice(`Scanning ${files.length} notes${folderInfo} for PubMed/PMC/DOI links...`);
+    let totalLinksFound = 0;
+    let totalProcessed = 0;
+    let filesProcessed = 0;
+    for (const file of files) {
+      try {
+        const content = await this.app.vault.read(file);
+        const pubmedMatches = content.match(/https?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/\d+\/?/gi) || [];
+        const pmcMatches = content.match(/https?:\/\/pmc\.ncbi\.nlm\.nih\.gov\/(?:articles\/)?PMC\d+\/?/gi) || [];
+        const doiMatches = content.match(/https?:\/\/(?:dx\.)?doi\.org\/10\.\d{4,9}\/[-._;()/:A-Z0-9]+(?=[\s\])]|$)/gi) || [];
+        const pubmedIds = [...new Set(pubmedMatches.map((match) => this.extractPubMedId(match)).filter((id) => id !== null))];
+        const pmcIds = [...new Set(pmcMatches.map((match) => this.extractPMCId(match)).filter((id) => id !== null))];
+        const dois = [...new Set(doiMatches.map((match) => this.extractDOI(match)).filter((id) => id !== null))];
+        const linksInFile = pubmedIds.length + pmcIds.length + dois.length;
+        if (linksInFile === 0) {
+          continue;
+        }
+        totalLinksFound += linksInFile;
+        filesProcessed++;
+        let modifiedContent = content;
+        for (const pubmedId of pubmedIds) {
+          try {
+            const escapedPubmedId = pubmedId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const quickCheckPattern = new RegExp(`\\[.*\\](https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`, "i");
+            if (quickCheckPattern.test(modifiedContent)) {
+              console.log(`PubMed ID ${pubmedId} already cited in ${file.path}, skipping`);
+              continue;
+            }
+            const info = await this.fetchPubMedApiData(pubmedId);
+            if (info && !this.isAlreadyCited(modifiedContent, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+              const citation = this.formatCitation(info);
+              const urlPattern = new RegExp(`https?://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${pubmedId}/?`, "gi");
+              modifiedContent = modifiedContent.replace(urlPattern, citation);
+              totalProcessed++;
+            } else if (info && this.isAlreadyCited(modifiedContent, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+              console.log(`PubMed ID ${pubmedId} already cited in ${file.path} (after fetch), skipping`);
+            }
+            await this.delay(350);
+          } catch (error) {
+            console.error(`Error processing PubMed ID ${pubmedId} in ${file.path}:`, error);
+          }
+        }
+        for (const pmcId of pmcIds) {
+          try {
+            const escapedPmcId = pmcId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const quickCheckPattern = new RegExp(`\\[\u{1F4C4}\\](https://pmc\\.ncbi\\.nlm\\.nih\\.gov/articles/${escapedPmcId}/?\\)`, "i");
+            if (quickCheckPattern.test(modifiedContent)) {
+              console.log(`PMC ID ${pmcId} already cited in ${file.path}, skipping`);
+              continue;
+            }
+            const pubmedId = await this.findPubMedIdFromPMC(pmcId);
+            await this.delay(350);
+            if (pubmedId) {
+              const info = await this.fetchPubMedApiData(pubmedId);
+              await this.delay(350);
+              if (info) {
+                const articleInfo = {
+                  ...info,
+                  pmcId
+                  // Add PMC ID for proper citation formatting
+                };
+                if (!this.isAlreadyCited(modifiedContent, articleInfo.pubmedId, articleInfo.doi, articleInfo.pmcId, articleInfo.title, articleInfo.year)) {
+                  const citation = this.formatCitation(articleInfo);
+                  const escapedPmcId2 = pmcId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                  const urlPattern = new RegExp(`https?://pmc\\.ncbi\\.nlm\\.nih\\.gov/(?:articles/)?${escapedPmcId2}/?`, "gi");
+                  modifiedContent = modifiedContent.replace(urlPattern, citation);
+                  totalProcessed++;
+                } else {
+                  console.log(`PMC ID ${pmcId} already cited in ${file.path}, skipping`);
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Error processing PMC ID ${pmcId} in ${file.path}:`, error);
+          }
+        }
+        for (const doi of dois) {
+          try {
+            const escapedDoi = doi.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const quickCheckPattern = new RegExp(`\\[.*\\](https://doi\\.org/${escapedDoi}\\)`, "i");
+            if (quickCheckPattern.test(modifiedContent)) {
+              console.log(`DOI ${doi} already cited in ${file.path}, skipping`);
+              continue;
+            }
+            const info = await this.fetchDOIApiData(doi);
+            if (!this.isAlreadyCited(modifiedContent, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+              const citation = this.formatCitation(info);
+              const escapedDoi2 = doi.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const urlPattern = new RegExp(`https?://(?:dx\\.)?doi\\.org/${escapedDoi2}`, "gi");
+              modifiedContent = modifiedContent.replace(urlPattern, citation);
+              totalProcessed++;
+            } else {
+              console.log(`DOI ${doi} already cited in ${file.path}, skipping`);
+            }
+            await this.delay(350);
+          } catch (error) {
+            console.error(`Error processing DOI ${doi} in ${file.path}:`, error);
+          }
+        }
+        if (modifiedContent !== content) {
+          await this.app.vault.modify(file, modifiedContent);
+        }
+      } catch (error) {
+        console.error(`Error processing file ${file.path}:`, error);
+      }
+    }
+    new import_obsidian.Notice(`Global update complete: Processed ${totalProcessed} of ${totalLinksFound} links across ${filesProcessed} notes`);
+  }
+  formatCitation(info) {
+    const type = info.articleType || "Article";
+    if (info.pubmedId && info.pmcId) {
+      const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
+      const pmcLink = `https://pmc.ncbi.nlm.nih.gov/articles/${info.pmcId}/`;
+      return `\u{1F4DA} ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [\u{1F4C4}](${pmcLink})`;
+    } else if (info.pubmedId && info.doi) {
+      const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
+      const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
+      return `\u{1F4DA} ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [\u{1F517}](${doiLink})`;
+    } else if (info.pubmedId) {
+      const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
+      return `\u{1F4DA} ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
+    } else if (info.doi) {
+      const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
+      return `\u{1F517} ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
+    }
+    return "";
+  }
+};
+var FolderSelectionModal = class extends import_obsidian.Modal {
+  constructor(app, onSubmit) {
+    super(app);
+    this.onSubmit = onSubmit;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h2", { text: "Select Folder for Global Update" });
+    contentEl.createEl("p", {
+      text: "\u26A0\uFE0F This will update ALL PubMed/DOI links in the selected folder and its subfolders.",
+      cls: "mod-warning"
+    });
+    const allFiles = this.app.vault.getAllLoadedFiles();
+    const folders = allFiles.filter((f) => f.children !== void 0).map((f) => f.path).sort();
+    const allNotesBtn = contentEl.createEl("button", {
+      text: "\u{1F4C1} All notes in vault",
+      cls: "mod-cta"
+    });
+    allNotesBtn.style.width = "100%";
+    allNotesBtn.style.marginBottom = "10px";
+    allNotesBtn.onclick = () => {
+      this.onSubmit("/");
+      this.close();
+    };
+    contentEl.createEl("p", { text: "Or select a specific folder:" });
+    const folderList = contentEl.createEl("div", { cls: "folder-list" });
+    folderList.style.maxHeight = "300px";
+    folderList.style.overflowY = "auto";
+    folderList.style.border = "1px solid var(--background-modifier-border)";
+    folderList.style.borderRadius = "4px";
+    folderList.style.padding = "8px";
+    if (folders.length === 0) {
+      folderList.createEl("p", { text: "No folders found in vault" });
+    } else {
+      folders.forEach((folder) => {
+        const folderBtn = folderList.createEl("button", {
+          text: `\u{1F4C1} ${folder || "(root)"}`
+        });
+        folderBtn.style.width = "100%";
+        folderBtn.style.marginBottom = "4px";
+        folderBtn.style.textAlign = "left";
+        folderBtn.onclick = () => {
+          this.onSubmit(folder);
+          this.close();
+        };
+      });
+    }
+    const cancelBtn = contentEl.createEl("button", { text: "Cancel" });
+    cancelBtn.style.marginTop = "10px";
+    cancelBtn.onclick = () => {
+      this.close();
+    };
+  }
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
   }
 };
 var ArticleInputModal = class extends import_obsidian.Modal {
@@ -478,6 +803,11 @@ var PubMedFetcherSettingTab = class extends import_obsidian.PluginSettingTab {
     new import_obsidian.Setting(containerEl).setName("NCBI API Key (Optional)").setDesc("Enter your NCBI API key for higher rate limits. Get one from https://www.ncbi.nlm.nih.gov/account/dev/").addText((text) => text.setPlaceholder("Your NCBI API key").setValue(this.plugin.settings.apiKey || "").onChange(async (value) => {
       this.plugin.settings.apiKey = value;
       await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Enable Global Update Command").setDesc('\u26A0\uFE0F DANGEROUS: Enable the "Link Global" command that can update ALL notes in your vault. This command will modify multiple files. Only enable if you understand the risks and have backups.').addToggle((toggle) => toggle.setValue(this.plugin.settings.enableGlobalCommand || false).onChange(async (value) => {
+      this.plugin.settings.enableGlobalCommand = value;
+      await this.plugin.saveSettings();
+      new import_obsidian.Notice(`Global command ${value ? "enabled" : "disabled"}. Please reload Obsidian for changes to take effect.`);
     }));
   }
 };
