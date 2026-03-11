@@ -399,21 +399,25 @@ export default class PubMedFetcherPlugin extends Plugin {
 		// Format: Type: Title - Year, Journal
 		const type = info.articleType || 'Article';
 		
+		// Inline SVG icons as data URIs
+		const pubmedIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3Cpath d='M12 7v3'/%3E%3Cpath d='M12 14v3'/%3E%3C/svg%3E`;
+		const doiIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E`;
+		
 		if (info.pubmedId && info.doi) {
 			// Dual link format: PubMed icon + citation links to PubMed, DOI icon links to DOI
 			const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
 			const doiLink = `https://doi.org/${info.doi}`;
-			const citation = `![PubMed](icons/pubmed.svg) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [![DOI](icons/doi.svg)](${doiLink})`;
+			const citation = `![](${pubmedIcon}) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [![](${doiIcon})](${doiLink})`;
 			editor.replaceSelection(citation);
 		} else if (info.pubmedId) {
 			// PubMed only
 			const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
-			const citation = `![PubMed](icons/pubmed.svg) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
+			const citation = `![](${pubmedIcon}) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
 			editor.replaceSelection(citation);
 		} else if (info.doi) {
 			// DOI only (fallback)
 			const doiLink = `https://doi.org/${info.doi}`;
-			const citation = `![DOI](icons/doi.svg) ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
+			const citation = `![](${doiIcon}) ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
 			editor.replaceSelection(citation);
 		}
 		
