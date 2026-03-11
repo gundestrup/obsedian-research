@@ -46,13 +46,13 @@ This Obsidian plugin allows you to fetch article metadata from PubMed ID or DOI 
 **Example:**
 - Type: `https://pubmed.ncbi.nlm.nih.gov/38570095/`
 - Select and fetch
-- Result: `![](inline-svg-icon) Review: [An introduction to neuropalliative care](https://pubmed.ncbi.nlm.nih.gov/38570095/) - 2024, Clin Med (Lond) [![](inline-svg-icon)](https://doi.org/10.1016/...)`
+- Result: `📚 Review: [An introduction to neuropalliative care](https://pubmed.ncbi.nlm.nih.gov/38570095/) - 2024, Clin Med (Lond) [🔗](https://doi.org/10.1016/...)`
 
 The citation includes:
-- **Inline SVG icons** showing source (PubMed book icon and DOI link icon)
+- **📚 Book icon** for PubMed articles
 - **Article Type** (Review, Article, etc.)
 - **Clickable Title** linking to PubMed
-- **Clickable DOI icon** linking to DOI URL
+- **🔗 Clickable link icon** linking to DOI URL
 - **Year and Journal** name
 
 ## Settings

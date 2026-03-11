@@ -81,6 +81,9 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
   isValidDOI(doi) {
     return /^10\.\d+\/.+$/.test(doi);
   }
+  cleanDOI(doi) {
+    return doi.replace(/^doi:\s*/i, "").trim();
+  }
   extractPubMedId(input) {
     const urlMatch = input.match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)/);
     if (urlMatch) return urlMatch[1];
@@ -157,7 +160,7 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
     new import_obsidian.Notice("Invalid input. Please enter a valid PubMed ID, DOI, or URL.");
   }
   async fetchByPubMedId(pubmedId) {
-    var _a, _b, _c;
+    var _a, _b;
     try {
       new import_obsidian.Notice("Fetching article from PubMed...");
       const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
@@ -165,7 +168,7 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
         db: "pubmed",
         id: pubmedId,
         retmode: "json",
-        rettype: "abstract"
+        version: "2.0"
       });
       if (this.settings.apiKey) {
         params.append("api_key", this.settings.apiKey);
@@ -179,14 +182,24 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
       if (!result) {
         throw new Error("Article not found");
       }
-      const doi = result.doi || ((_b = result.elocationid) == null ? void 0 : _b.doi) || "";
+      let doi = "";
+      if (result.doi) {
+        doi = result.doi;
+      } else if (result.elocationid) {
+        doi = result.elocationid;
+      } else if (result.articleids) {
+        const doiObj = result.articleids.find((id) => id.idtype === "doi");
+        if (doiObj) {
+          doi = this.cleanDOI(doiObj.value);
+        }
+      }
       const articleInfo = {
         title: result.title || "No title available",
         journal: result.source || result.fulljournalname || "No journal available",
         year: result.pubdate ? result.pubdate.split(" ")[0] : "No year available",
         pubmedId,
         doi,
-        articleType: ((_c = result.pubtype) == null ? void 0 : _c[0]) || this.settings.articleType || "Article"
+        articleType: ((_b = result.pubtype) == null ? void 0 : _b[0]) || this.settings.articleType || "Article"
       };
       this.displayArticleInfo(articleInfo);
     } catch (error) {
@@ -196,7 +209,7 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
     }
   }
   async fetchByPubMedIdAndInsert(pubmedId, editor) {
-    var _a, _b, _c;
+    var _a, _b;
     try {
       new import_obsidian.Notice("Fetching article from PubMed...");
       const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
@@ -204,7 +217,7 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
         db: "pubmed",
         id: pubmedId,
         retmode: "json",
-        rettype: "abstract"
+        version: "2.0"
       });
       if (this.settings.apiKey) {
         params.append("api_key", this.settings.apiKey);
@@ -218,14 +231,24 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
       if (!result) {
         throw new Error("Article not found");
       }
-      const doi = result.doi || ((_b = result.elocationid) == null ? void 0 : _b.doi) || "";
+      let doi = "";
+      if (result.doi) {
+        doi = result.doi;
+      } else if (result.elocationid) {
+        doi = result.elocationid;
+      } else if (result.articleids) {
+        const doiObj = result.articleids.find((id) => id.idtype === "doi");
+        if (doiObj) {
+          doi = this.cleanDOI(doiObj.value);
+        }
+      }
       const articleInfo = {
         title: result.title || "No title available",
         journal: result.source || result.fulljournalname || "No journal available",
         year: result.pubdate ? result.pubdate.split(" ")[0] : "No year available",
         pubmedId,
         doi,
-        articleType: ((_c = result.pubtype) == null ? void 0 : _c[0]) || this.settings.articleType || "Article"
+        articleType: ((_b = result.pubtype) == null ? void 0 : _b[0]) || this.settings.articleType || "Article"
       };
       this.insertArticleInfo(articleInfo, editor);
     } catch (error) {
@@ -291,7 +314,7 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
     }
   }
   async displayArticleInfo(info) {
-    const link = info.pubmedId ? `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/` : `https://doi.org/${info.doi}`;
+    const link = info.pubmedId ? `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/` : `https://doi.org/${this.cleanDOI(info.doi || "")}`;
     const content = `# ${info.title}
 
 **Journal:** ${info.journal}  
@@ -318,20 +341,18 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
   }
   insertArticleInfo(info, editor) {
     const type = info.articleType || "Article";
-    const pubmedIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3Cpath d='M12 7v3'/%3E%3Cpath d='M12 14v3'/%3E%3C/svg%3E`;
-    const doiIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E`;
     if (info.pubmedId && info.doi) {
       const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
-      const doiLink = `https://doi.org/${info.doi}`;
-      const citation = `![](${pubmedIcon}) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [![](${doiIcon})](${doiLink})`;
+      const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
+      const citation = `\u{1F4DA} ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [\u{1F517}](${doiLink})`;
       editor.replaceSelection(citation);
     } else if (info.pubmedId) {
       const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
-      const citation = `![](${pubmedIcon}) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
+      const citation = `\u{1F4DA} ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
       editor.replaceSelection(citation);
     } else if (info.doi) {
-      const doiLink = `https://doi.org/${info.doi}`;
-      const citation = `![](${doiIcon}) ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
+      const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
+      const citation = `\u{1F517} ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
       editor.replaceSelection(citation);
     }
     new import_obsidian.Notice("Article information inserted");
@@ -345,7 +366,7 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
         db: "pubmed",
         id: pubmedId,
         retmode: "json",
-        rettype: "abstract"
+        version: "2.0"
       });
       if (this.settings.apiKey) {
         params.append("api_key", this.settings.apiKey);
@@ -383,7 +404,7 @@ var PubMedFetcherPlugin = class extends import_obsidian.Plugin {
         db: "pubmed",
         id: pubmedId,
         retmode: "json",
-        rettype: "abstract"
+        version: "2.0"
       });
       if (this.settings.apiKey) {
         params.append("api_key", this.settings.apiKey);
