@@ -78,6 +78,11 @@ export default class PubMedFetcherPlugin extends Plugin {
 		return /^10\.\d+\/.+$/.test(doi);
 	}
 
+	private cleanDOI(doi: string): string {
+		// Remove 'doi: ' prefix if present (case-insensitive)
+		return doi.replace(/^doi:\s*/i, '').trim();
+	}
+
 	private extractPubMedId(input: string): string | null {
 		// Extract from URL like https://pubmed.ncbi.nlm.nih.gov/38570095/
 		const urlMatch = input.match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)/);
@@ -195,7 +200,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				db: 'pubmed',
 				id: pubmedId,
 				retmode: 'json',
-				rettype: 'abstract'
+				version: '2.0'
 			});
 
 			if (this.settings.apiKey) {
@@ -216,7 +221,19 @@ export default class PubMedFetcherPlugin extends Plugin {
 			}
 
 			// Extract DOI from PubMed data if available
-			const doi = result.doi || result.elocationid?.doi || '';
+			// Check multiple possible locations for DOI in the API response
+			let doi = '';
+			if (result.doi) {
+				doi = result.doi;
+			} else if (result.elocationid) {
+				doi = result.elocationid;
+			} else if (result.articleids) {
+				// DOI might be in the articleids array
+				const doiObj = result.articleids.find((id: any) => id.idtype === 'doi');
+				if (doiObj) {
+					doi = this.cleanDOI(doiObj.value);
+				}
+			}
 			
 			const articleInfo = {
 				title: result.title || 'No title available',
@@ -245,7 +262,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				db: 'pubmed',
 				id: pubmedId,
 				retmode: 'json',
-				rettype: 'abstract'
+				version: '2.0'
 			});
 
 			if (this.settings.apiKey) {
@@ -266,7 +283,19 @@ export default class PubMedFetcherPlugin extends Plugin {
 			}
 
 			// Extract DOI from PubMed data if available
-			const doi = result.doi || result.elocationid?.doi || '';
+			// Check multiple possible locations for DOI in the API response
+			let doi = '';
+			if (result.doi) {
+				doi = result.doi;
+			} else if (result.elocationid) {
+				doi = result.elocationid;
+			} else if (result.articleids) {
+				// DOI might be in the articleids array
+				const doiObj = result.articleids.find((id: any) => id.idtype === 'doi');
+				if (doiObj) {
+					doi = this.cleanDOI(doiObj.value);
+				}
+			}
 			
 			const articleInfo = {
 				title: result.title || 'No title available',
@@ -362,7 +391,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 	async displayArticleInfo(info: { title: string; journal: string; year: string; pubmedId?: string; doi?: string; articleType?: string }) {
 		const link = info.pubmedId 
 			? `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`
-			: `https://doi.org/${info.doi}`;
+			: `https://doi.org/${this.cleanDOI(info.doi || '')}`;
 		
 		const content = `# ${info.title}
 
@@ -399,25 +428,21 @@ export default class PubMedFetcherPlugin extends Plugin {
 		// Format: Type: Title - Year, Journal
 		const type = info.articleType || 'Article';
 		
-		// Inline SVG icons as data URIs
-		const pubmedIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3Cpath d='M12 7v3'/%3E%3Cpath d='M12 14v3'/%3E%3C/svg%3E`;
-		const doiIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E`;
-		
 		if (info.pubmedId && info.doi) {
-			// Dual link format: PubMed icon + citation links to PubMed, DOI icon links to DOI
+			// Dual link format: PubMed + citation links to PubMed, DOI icon links to DOI
 			const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
-			const doiLink = `https://doi.org/${info.doi}`;
-			const citation = `![](${pubmedIcon}) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [![](${doiIcon})](${doiLink})`;
+			const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
+			const citation = `📚 ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal} [🔗](${doiLink})`;
 			editor.replaceSelection(citation);
 		} else if (info.pubmedId) {
 			// PubMed only
 			const pubmedLink = `https://pubmed.ncbi.nlm.nih.gov/${info.pubmedId}/`;
-			const citation = `![](${pubmedIcon}) ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
+			const citation = `📚 ${type}: [${info.title}](${pubmedLink}) - ${info.year}, ${info.journal}`;
 			editor.replaceSelection(citation);
 		} else if (info.doi) {
 			// DOI only (fallback)
-			const doiLink = `https://doi.org/${info.doi}`;
-			const citation = `![](${doiIcon}) ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
+			const doiLink = `https://doi.org/${this.cleanDOI(info.doi)}`;
+			const citation = `🔗 ${type}: [${info.title}](${doiLink}) - ${info.year}, ${info.journal}`;
 			editor.replaceSelection(citation);
 		}
 		
@@ -433,7 +458,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				db: 'pubmed',
 				id: pubmedId,
 				retmode: 'json',
-				rettype: 'abstract'
+				version: '2.0'
 			});
 
 			if (this.settings.apiKey) {
@@ -480,7 +505,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				db: 'pubmed',
 				id: pubmedId,
 				retmode: 'json',
-				rettype: 'abstract'
+				version: '2.0'
 			});
 
 			if (this.settings.apiKey) {
