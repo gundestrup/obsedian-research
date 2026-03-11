@@ -5,6 +5,23 @@ All notable changes to the PubMed Article Fetcher plugin will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-03-11
+
+### Fixed
+- Fixed DOI link formatting issue where "doi: " prefix was included in URLs
+- Added cleanDOI helper function to properly extract DOI values from PubMed API
+- Fixed TypeScript compilation errors for null safety
+
+### Changed
+- Replaced inline SVG with Unicode emoji icons for better Obsidian compatibility
+- Updated to ESummary API version 2.0 for improved article data extraction
+- Icons now work in both edit and reading modes (📚 for PubMed, 🔗 for DOI)
+
+### Improved
+- Better DOI extraction from PubMed API articleids array
+- Cleaner markdown output without HTML rendering issues
+- Enhanced cross-platform compatibility with Unicode symbols
+
 ## [1.0.1] - 2026-03-11
 
 ### Fixed
