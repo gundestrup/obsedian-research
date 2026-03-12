@@ -2,69 +2,98 @@
 
 This plugin uses automated quality checks and GitHub Actions for releases.
 
-## Pre-Release Checklist (Automated)
+## 🚀 Quick Release (4 steps)
 
-**The `npm version` command now automatically:**
-1. ✅ Runs lint checks
-2. ✅ Runs unit tests (72 tests)
-3. ✅ Runs integration tests (5 test suites)
-4. ✅ Builds the plugin
-5. ✅ Validates changelog entry exists
-6. ✅ Updates manifest.json and versions.json
-7. ✅ Stages files for commit
-
-## Manual Steps
-
-### 1. Update Changelog
 ```bash
-# Add entry for new version in CHANGELOG.md
+# 1. Add changelog entry
 ## [1.2.2] - 2026-03-12
 ### Added
 - New feature
-### Fixed
+### Fixed  
 - Bug fix
-```
 
-### 2. Update Version
-```bash
-npm version patch  # or minor/major
-```
+# 2. Run version bump (automated checks + updates)
+npm version patch
 
-### 3. Review and Commit
-```bash
+# 3. Review staged changes
 git status
-git commit -m "release: v1.2.2"
-```
 
-### 4. Push and Release
-```bash
+# 4. Push to trigger release
 git push && git push --tags
 ```
 
-## What Gets Released
+## 🔄 What Happens Automatically
 
-- `main.js` - Compiled plugin
-- `manifest.json` - Plugin metadata (auto-updated)
-- `styles.css` - Styles (if exists)
+### Step 2: `npm version` does everything:
+1. ✅ **Quality Checks**: Lint + Unit Tests + Integration Tests + Build
+2. ✅ **Changelog Validation**: Ensures entry exists for new version
+3. ✅ **Version Updates**: Updates manifest.json and versions.json
+4. ✅ **Git Staging**: Stages all version files
+5. ✅ **Git Commit**: Creates commit with version bump
+6. ✅ **Git Tag**: Creates and pushes tag (triggers GitHub Actions)
 
-## Automated Validation
+### Step 4: GitHub Actions creates release:
+- 📦 Builds plugin
+- 🏷️ Creates GitHub release
+- 📎 Attaches main.js and manifest.json
 
-The version bump will fail if:
+## 📋 Pre-Release Requirements
+
+**Must be done BEFORE `npm version`:**
+
+### 1. Update CHANGELOG.md
+```markdown
+## [1.2.2] - 2026-03-12
+### Added
+- Feature description
+### Fixed
+- Bug fix description
+```
+
+### 2. Clean Working Directory
+```bash
+git status  # Should show "working tree clean"
+```
+
+## 🛡️ Automated Validation
+
+**`npm version` will FAIL if:**
 - ❌ Lint errors found
-- ❌ Unit tests fail
-- ❌ Integration tests fail
+- ❌ Unit tests fail (72 tests)
+- ❌ Integration tests fail (5 suites)
 - ❌ Build fails
 - ❌ No changelog entry for the version
+- ❌ Git working directory not clean
 
-## Quick Release Commands
+## 🚨 Troubleshooting
+
+### If `npm version` fails:
+1. **Check the error message** - It will tell you what failed
+2. **Fix the issue** - Run the failing command manually:
+   ```bash
+   npm run lint           # For lint errors
+   npm test               # For unit test errors
+   npm run test:integration # For integration test errors
+   npm run build          # For build errors
+   ```
+3. **Add changelog entry** if missing
+4. **Try again**: `npm version patch`
+
+### If GitHub Actions fails:
+- Check the Actions tab on GitHub
+- Usually due to build issues or network problems
+
+## 📦 Release Files
+
+**Automatically attached to GitHub release:**
+- `main.js` - Compiled plugin
+- `manifest.json` - Plugin metadata
+- `styles.css` - Styles (if exists)
+
+## 🎯 Version Commands
 
 ```bash
-# For bug fixes
-npm version patch
-
-# For new features
-npm version minor
-
-# For breaking changes
-npm version major
+npm version patch   # 1.2.1 → 1.2.2 (bug fixes)
+npm version minor   # 1.2.1 → 1.3.0 (new features)  
+npm version major   # 1.2.1 → 2.0.0 (breaking changes)
 ```
