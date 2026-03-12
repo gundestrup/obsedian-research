@@ -6,8 +6,8 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version-bump": "node version-bump.mjs",
-		"version": "npm run version-bump",
+		"preversion": "node version-bump.mjs --preversion",
+		"version": "node version-bump.mjs",
 		"postversion": "git push && git push --tags",
 		"release": "npm run lint && npm test && npm run test:integration && npm run build",
 		"lint": "eslint **/*.ts",
