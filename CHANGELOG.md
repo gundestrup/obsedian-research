@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.2.0] - 2026-03-12
+
+### Added
+- **Comprehensive Test Suite**: 72 unit tests + 5 integration test suites
+- **Modern Tooling**: ESLint v10, c8 v11, sinon v21, TypeScript v5.9
+- **Package Updates**: All safe dependencies updated to latest versions
+
+### Improved
+- **Documentation**: Streamlined README and CHANGELOG (KISS principle)
+- **Code Quality**: Full linting coverage for all TypeScript files
+- **Project Structure**: Cleaned up debugging artifacts and IDE files
+- **Testing Protocol**: Complete pre-release checklist in RELEASE.md
+
+### Changed
+- **Test Organization**: Separated unit tests (fast) from integration tests (API calls)
+- **Documentation**: Merged test docs into single TESTING.md file
+- **Development Workflow**: Updated build, lint, and test scripts
+
 ## [1.1.1] - 2026-03-11
 
 ### Fixed
