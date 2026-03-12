@@ -6,19 +6,36 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint": "eslint **/*.ts",
+		"test": "mocha",
+		"test:watch": "mocha --watch",
+		"test:coverage": "c8 mocha",
+		"test:integration": "node run-tests.js"
 	},
 	"keywords": [],
 	"author": "Svend Gundestrup",
 	"license": "AGPL-3.0",
 	"devDependencies": {
+		"@types/chai": "^4.3.20",
+		"@types/mocha": "^10.0.6",
 		"@types/node": "^16.11.6",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
-		"@typescript-eslint/parser": "5.29.0",
-		"builtin-modules": "3.3.0",
+		"@types/sinon": "^21.0.0",
+		"@types/sinon-chai": "^3.2.12",
+		"@typescript-eslint/eslint-plugin": "^8.57.0",
+		"@typescript-eslint/parser": "^8.57.0",
+		"builtin-modules": "^5.0.0",
+		"c8": "^11.0.0",
+		"chai": "^4.5.0",
 		"esbuild": "0.27.3",
+		"eslint": "^10.0.3",
+		"eslint-plugin-obsidianmd": "^0.1.9",
+		"mocha": "^11.7.5",
 		"obsidian": "latest",
-		"tslib": "2.4.0",
-		"typescript": "4.7.4"
+		"sinon": "^21.0.2",
+		"sinon-chai": "^3.7.0",
+		"tslib": "^2.8.1",
+		"tsx": "^4.7.1",
+		"typescript": "^5.9.3"
 	}
 }

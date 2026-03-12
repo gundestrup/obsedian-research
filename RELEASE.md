@@ -2,21 +2,36 @@
 
 This plugin uses GitHub Actions to automatically build and attach files to releases.
 
+## Pre-Release Checklist
+
+**Before every release:**
+
+```bash
+# 1. Run full test suite
+npm run build
+npm run lint
+npm test
+npm run test:integration
+
+# 2. Update version
+npm version patch  # or minor/major
+```
+
+All tests must pass before releasing.
+
 ## How to Create a New Release
 
-### Option 1: Automated Release (Recommended)
+### Automated Release (Recommended)
 
-1. **Update version in package.json:**
+1. **Update version and test:**
    ```bash
-   npm version patch  # for bug fixes (1.0.0 -> 1.0.1)
-   npm version minor  # for new features (1.0.0 -> 1.1.0)
-   npm version major  # for breaking changes (1.0.0 -> 2.0.0)
+   npm run build && npm run lint && npm test && npm run test:integration
+   npm version patch  # or minor/major
    ```
 
 2. **Push the tag:**
    ```bash
-   git push
-   git push --tags
+   git push && git push --tags
    ```
 
 3. **GitHub Actions will automatically:**
@@ -24,37 +39,31 @@ This plugin uses GitHub Actions to automatically build and attach files to relea
    - Create a GitHub release
    - Attach `main.js` and `manifest.json`
 
-### Option 2: Manual Release
+### Manual Release
 
-1. **Build the plugin:**
+1. **Build and test:**
    ```bash
-   npm run build
+   npm run build && npm run lint && npm test && npm run test:integration
    ```
 
 2. **Create and push tag:**
    ```bash
-   git tag v1.0.1
-   git push origin v1.0.1
+   git tag v1.0.1 && git push origin v1.0.1
    ```
 
-3. **Go to GitHub:**
-   - Navigate to: https://github.com/gundestrup/obsedian-research/releases
-   - Click "Create a new release"
-   - Select the tag you just created
-   - GitHub Actions will automatically attach the files
+3. **Create release on GitHub** - Actions will attach files automatically.
 
-## What Gets Released
+## Release Files
 
-The following files are automatically attached to each release:
-- `main.js` - The compiled plugin
+- `main.js` - Compiled plugin
 - `manifest.json` - Plugin metadata
 - `styles.css` - Styles (if exists)
 
 ## Version Bumping
 
-The `version-bump.mjs` script automatically:
-- Updates `manifest.json` version
-- Updates `versions.json` with compatibility info
+The `version-bump.mjs` script automatically updates:
+- `manifest.json` version
+- `versions.json` compatibility info
 - Commits the changes
 
-This runs automatically when you use `npm version`.
+Runs automatically when you use `npm version`.
