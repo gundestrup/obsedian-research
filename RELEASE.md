@@ -25,9 +25,11 @@ git push && git push --tags
 ## 🔄 What Happens Automatically
 
 ### Step 2: `npm version` does everything:
-1. ✅ **Quality Checks**: Lint + Unit Tests + Integration Tests + Build
-2. ✅ **Changelog Validation**: Ensures entry exists for new version
-3. ✅ **Version Updates**: Updates manifest.json and versions.json
+1. ✅ **Pre-version Validation**: Changelog + Quality checks (before version update)
+   - Lint + Unit Tests + Integration Tests + Build
+   - Changelog validation for NEXT version
+2. ✅ **Version Update**: npm updates package.json (only if validation passes)
+3. ✅ **Version Sync**: Updates manifest.json and versions.json to match
 4. ✅ **Git Staging**: Stages all version files
 5. ✅ **Git Commit**: Creates commit with version bump
 6. ✅ **Git Tag**: Creates and pushes tag (triggers GitHub Actions)
@@ -57,13 +59,15 @@ git status  # Should show "working tree clean"
 
 ## 🛡️ Automated Validation
 
-**`npm version` will FAIL if:**
+**`npm version` will FAIL BEFORE updating versions if:**
 - ❌ Lint errors found
 - ❌ Unit tests fail (72 tests)
 - ❌ Integration tests fail (5 suites)
 - ❌ Build fails
-- ❌ No changelog entry for the version
+- ❌ No changelog entry for the NEXT version
 - ❌ Git working directory not clean
+
+**🔒 Safety Guarantee:** If validation fails, NO version files are changed.
 
 ## 🚨 Troubleshooting
 

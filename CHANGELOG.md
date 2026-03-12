@@ -1,6 +1,18 @@
 # Changelog
 
-## [1.2.0] - 2026-03-12
+## [1.2.2] - 2026-03-12
+
+### Fixed
+- **Release Safety**: Implemented pre-version validation to prevent version inconsistency
+- **Atomic Releases**: Tests now run BEFORE any version files are updated
+- **Version Validation**: changelog validation happens before package.json changes
+
+### Improved
+- **Release Documentation**: Updated RELEASE.md to reflect new validation order
+- **Error Prevention**: No more inconsistent version states when tests fail
+- **Safety Guarantee**: Either all checks pass and versions update, or nothing changes
+
+## [1.2.1] - 2026-03-12
 
 ### Added
 - **Comprehensive Test Suite**: 72 unit tests + 5 integration test suites
