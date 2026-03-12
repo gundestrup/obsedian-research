@@ -1,7 +1,7 @@
 {
 	"id": "pubmed-fetcher",
 	"name": "PubMed Article Fetcher",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"minAppVersion": "0.15.0",
 	"description": "Fetch article metadata from PubMed ID or DOI links.",
 	"author": "Svend Gundestrup",

@@ -1,69 +1,70 @@
 # Release Process
 
-This plugin uses GitHub Actions to automatically build and attach files to releases.
+This plugin uses automated quality checks and GitHub Actions for releases.
 
-## Pre-Release Checklist
+## Pre-Release Checklist (Automated)
 
-**Before every release:**
+**The `npm version` command now automatically:**
+1. ✅ Runs lint checks
+2. ✅ Runs unit tests (72 tests)
+3. ✅ Runs integration tests (5 test suites)
+4. ✅ Builds the plugin
+5. ✅ Validates changelog entry exists
+6. ✅ Updates manifest.json and versions.json
+7. ✅ Stages files for commit
 
+## Manual Steps
+
+### 1. Update Changelog
 ```bash
-# 1. Run full test suite
-npm run build
-npm run lint
-npm test
-npm run test:integration
+# Add entry for new version in CHANGELOG.md
+## [1.2.2] - 2026-03-12
+### Added
+- New feature
+### Fixed
+- Bug fix
+```
 
-# 2. Update version
+### 2. Update Version
+```bash
 npm version patch  # or minor/major
 ```
 
-All tests must pass before releasing.
+### 3. Review and Commit
+```bash
+git status
+git commit -m "release: v1.2.2"
+```
 
-## How to Create a New Release
+### 4. Push and Release
+```bash
+git push && git push --tags
+```
 
-### Automated Release (Recommended)
-
-1. **Update version and test:**
-   ```bash
-   npm run build && npm run lint && npm test && npm run test:integration
-   npm version patch  # or minor/major
-   ```
-
-2. **Push the tag:**
-   ```bash
-   git push && git push --tags
-   ```
-
-3. **GitHub Actions will automatically:**
-   - Build the plugin
-   - Create a GitHub release
-   - Attach `main.js` and `manifest.json`
-
-### Manual Release
-
-1. **Build and test:**
-   ```bash
-   npm run build && npm run lint && npm test && npm run test:integration
-   ```
-
-2. **Create and push tag:**
-   ```bash
-   git tag v1.0.1 && git push origin v1.0.1
-   ```
-
-3. **Create release on GitHub** - Actions will attach files automatically.
-
-## Release Files
+## What Gets Released
 
 - `main.js` - Compiled plugin
-- `manifest.json` - Plugin metadata
+- `manifest.json` - Plugin metadata (auto-updated)
 - `styles.css` - Styles (if exists)
 
-## Version Bumping
+## Automated Validation
 
-The `version-bump.mjs` script automatically updates:
-- `manifest.json` version
-- `versions.json` compatibility info
-- Commits the changes
+The version bump will fail if:
+- ❌ Lint errors found
+- ❌ Unit tests fail
+- ❌ Integration tests fail
+- ❌ Build fails
+- ❌ No changelog entry for the version
 
-Runs automatically when you use `npm version`.
+## Quick Release Commands
+
+```bash
+# For bug fixes
+npm version patch
+
+# For new features
+npm version minor
+
+# For breaking changes
+npm version major
+```
