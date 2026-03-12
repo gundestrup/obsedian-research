@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.3] - 2026-03-12
+
+### Fixed
+- **Version Bump Script**: Now supports patch/minor/major version bumps (was only patch)
+- **Regex Escaping**: Properly escape all dots in version numbers for changelog validation
+- **Error Visibility**: Show full test output for easier debugging when checks fail
+- **Exact Version Validation**: Validate exact version match after npm bump
+
+### Improved
+- **Version Comparison**: Semantic version comparison instead of hardcoded patch increment
+- **Dual Validation**: Check for newer version in preversion, exact match in version script
+- **Package Scripts**: Added missing preversion script for proper lifecycle
+
 ## [1.2.2] - 2026-03-12
 
 ### Fixed
