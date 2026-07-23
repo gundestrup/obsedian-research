@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.3.0] - 2026-07-23
+
+### Added
+- **Edge-case tests**: 30+ tests for identifier extraction (trailing punctuation, mixed casing, malformed URLs, false-positive hostnames), API responses (encoded params, malformed bodies, PMC non-200), and URL replacement (Markdown links, fragments/query strings, code blocks, repeated IDs)
+- **Replacement test suite**: New `tests/replacement.test.ts` covering all URL replacement helpers
+- **PluginSettingsHolder interface**: Reduced coupling between `settings.ts` and `main.ts` via interface in `types.ts`
+
+### Changed
+- **Migrated from Mocha/Chai to Vitest 3**: All tests now use Vitest with `vi.fn()` mocks
+- **Build separation**: Created `tsconfig.build.json` to exclude test files from production `tsc` type-checking
+- **Replaced `builtin-modules`**: Now uses Node's built-in `module.builtinModules` in `esbuild.config.mjs`
+- **Updated `esbuild`**: Bumped from 0.25.0 to 0.28.0
+- **Pinned `obsidian`**: Locked to 1.13.1 matching `minAppVersion`
+- **Case-insensitive extraction**: `extractPubMedId`, `extractPMCId`, and `extractDOI` now handle mixed-case URLs
+- **DOI cleaning**: `parsePubMedResult` now applies `cleanDOI()` to top-level `result.doi` and `result.elocationid`
+- **DOI trailing period**: `extractDOI` now strips trailing periods from extracted DOIs
+
+### Fixed
+- **`findPubMedIdFromPMC`**: Normalized URL construction with `URLSearchParams` and added HTTP status checking
+- **`styles.css` release asset**: Added to GitHub Actions release workflow
+- **`manifest.json`**: Removed empty `fundingUrl`, updated `minAppVersion` to 1.13.1
+- **`version-bump.mjs`**: Removed obsolete `test:integration` call
+- **Mock type safety**: `mockRequest()` now uses `MockedFunction<RequestFunction>` with typed call inspection
+
+### Removed
+- **Legacy Mocha files**: Deleted `tests/setup.ts`, `tests/test-utils.ts`, `.mocharc.json`, `run-tests.js`, `test-doi.js`, `test-pmc.js`, `test-pmid.js`, `test-duplicate-prevention.js`, `test-enhanced-detection.js`
+- **`mockRequestSequence()`**: Removed unused helper from `tests/api.test.ts`
+- **`builtin-modules`**: Removed deprecated dependency
+
 ## [1.2.3] - 2026-03-12
 
 ### Fixed

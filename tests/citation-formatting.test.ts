@@ -2,8 +2,9 @@
  * Unit tests for citation formatting
  */
 
-import { expect } from './setup';
-import { formatCitation } from './test-utils';
+import { describe, it, expect } from 'vitest';
+import { formatCitation } from '../src/utils';
+import type { ArticleInfo } from '../src/types';
 
 describe('Citation Formatting', () => {
 	describe('PubMed + PMC citations', () => {

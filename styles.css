@@ -1,0 +1,27 @@
+.pubmed-fetcher-button-full {
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+.pubmed-fetcher-button-cancel {
+	margin-top: 10px;
+}
+
+.pubmed-fetcher-folder-list {
+	max-height: 300px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+}
+
+.pubmed-fetcher-folder-button {
+	width: 100%;
+	margin-bottom: 4px;
+	text-align: left;
+}
+
+.pubmed-fetcher-input {
+	width: 100%;
+	margin-bottom: 20px;
+}

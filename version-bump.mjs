@@ -71,10 +71,6 @@ if (isPreversion) {
         execSync("npm test", { stdio: "inherit" });
         console.log("  ✅ Unit tests passed");
         
-        console.log("  🌐 Running integration tests...");
-        execSync("npm run test:integration", { stdio: "inherit" });
-        console.log("  ✅ Integration tests passed");
-        
         console.log("  🔨 Building plugin...");
         execSync("npm run build", { stdio: "inherit" });
         console.log("  ✅ Build successful");

@@ -2,8 +2,8 @@
  * Unit tests for duplicate citation detection
  */
 
-import { expect } from './setup';
-import { isAlreadyCited } from './test-utils';
+import { describe, it, expect } from 'vitest';
+import { isAlreadyCited } from '../src/utils';
 
 describe('Duplicate Citation Detection', () => {
 	describe('PubMed ID detection', () => {
