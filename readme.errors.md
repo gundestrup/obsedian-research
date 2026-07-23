@@ -144,60 +144,68 @@ The release workflow (`.github/workflows/release.yml`) uploads only `main.js` an
 
 ## Minor code-quality notes
 
-- `src/api.ts` `findPubMedIdFromPMC` uses raw string URL concatenation, while `findPubMedIdFromDOI` and `fetchPubMedApiData` use `URLSearchParams`. Make URL construction consistent.
-- `findPubMedIdFromPMC` does not check the HTTP status before parsing the response. Its behavior should be made consistent with the other API functions and covered by tests.
-- `parsePubMedResult` cleans DOI values from `articleids` but does not clean top-level `result.doi` or `result.elocationid` with `cleanDOI`.
-- `tests/api.test.ts` defines `mockRequestSequence()` but never uses it — remove the unused helper or add a test that needs multiple responses.
-- API tests should cover encoded DOI/API-key parameters, malformed response bodies, and PMC non-200 responses.
-- Identifier extraction should have edge-case tests for trailing punctuation, mixed casing, malformed URLs, and false-positive hostnames.
-- Replacement helpers should be tested against Markdown links, URL fragments/query strings, code blocks, and repeated identifiers.
-- `src/settings.ts` imports `type PubMedFetcherPlugin` from `../main`. This is erased at runtime and is not a runtime circular dependency, but a small interface in `src/types.ts` would reduce coupling.
+- ✅ `src/api.ts` `findPubMedIdFromPMC` uses raw string URL concatenation, while `findPubMedIdFromDOI` and `fetchPubMedApiData` use `URLSearchParams`. Make URL construction consistent.
+- ✅ `findPubMedIdFromPMC` does not check the HTTP status before parsing the response. Its behavior should be made consistent with the other API functions and covered by tests.
+- ✅ `parsePubMedResult` cleans DOI values from `articleids` but does not clean top-level `result.doi` or `result.elocationid` with `cleanDOI`.
+- ✅ `tests/api.test.ts` defines `mockRequestSequence()` but never uses it — remove the unused helper or add a test that needs multiple responses.
+- ✅ API tests should cover encoded DOI/API-key parameters, malformed response bodies, and PMC non-200 responses.
+- ✅ Identifier extraction should have edge-case tests for trailing punctuation, mixed casing, malformed URLs, and false-positive hostnames.
+- ✅ Replacement helpers should be tested against Markdown links, URL fragments/query strings, code blocks, and repeated identifiers.
+- ✅ `src/settings.ts` imports `type PubMedFetcherPlugin` from `../main`. This is erased at runtime and is not a runtime circular dependency, but a small interface in `src/types.ts` would reduce coupling.
 
 ## Recommended completion order (updated after live verification)
 
-### P0 — Release and verification blockers (confirmed by running the actual toolchain)
+### P0 — Release and verification blockers (completed ✅)
 
-1. Update `tsconfig.json` to exclude `tests/` from the production build `include` array (best practice shown below under "Excluding tests from the production build"), so test-only files can never break `npm run build`.
-2. Delete `tests/setup.ts` — it currently **breaks `npm run build`** with real `tsc` errors (`TS1192`, `TS2307`), not just lint warnings.
-3. Delete `tests/test-utils.ts` — confirmed dead code, unused by any current test.
-4. Delete `.mocharc.json`, `run-tests.js`, and all `test-*.js` legacy integration scripts.
-5. Fix `mockRequest()` in `tests/api.test.ts` to use `MockedFunction<RequestFunction>` instead of `RequestFunction`, resolving the 2 confirmed `@typescript-eslint/no-unsafe-assignment` errors.
-6. Update `version-bump.mjs` to remove the `npm run test:integration` call.
-7. Add `styles.css` to the GitHub release asset list in `release.yml`.
-8. Keep `main.js` in git; ensure `.gitignore` still contains `!main.js`.
-9. Update `manifest.json` `minAppVersion` to the latest stable Obsidian release and mirror it in `versions.json`.
-10. Pin `obsidian` in `package.json` to the npm version matching `minAppVersion`, then regenerate and commit `package-lock.json`.
-11. Re-run `npm run lint`, `npm test`, and `npm run build` to confirm a fully clean pipeline.
+1. ✅ Update `tsconfig.json` to include `**/*.ts` and create `tsconfig.build.json` with `include: ["main.ts", "src/**/*.ts"]` so tests are type-checked but never break `npm run build`.
+2. ✅ Delete `tests/setup.ts` — it was breaking `npm run build` with `tsc` errors (`TS1192`, `TS2307`).
+3. ✅ Delete `tests/test-utils.ts` — dead code, unused by any current test.
+4. ✅ Delete `.mocharc.json`, `run-tests.js`, `test-doi.js`, `test-pmc.js`, `test-pmid.js`, `test-duplicate-prevention.js`, and `test-enhanced-detection.js`.
+5. ✅ Fix `mockRequest()` in `tests/api.test.ts` to use `MockedFunction<RequestFunction>` and replace `toHaveBeenCalledWith({ url: expect.stringContaining(...) })` with typed `requestFn.mock.calls[0][0].url` checks, resolving the 2 `@typescript-eslint/no-unsafe-assignment` errors.
+6. ✅ Update `version-bump.mjs` to remove the `npm run test:integration` call.
+7. ✅ Add `styles.css` to the GitHub release asset list in `release.yml`.
+8. ✅ Keep `main.js` in git; `.gitignore` still contains `!main.js`.
+9. ✅ Update `manifest.json` `minAppVersion` to `1.13.1` and mirror the `1.2.3` entry in `versions.json`.
+10. ✅ Pin `obsidian` in `package.json` to `1.13.1` and regenerate `package-lock.json`.
+11. ✅ Verified `npm run lint`, `npm test`, and `npm run build` all pass cleanly.
 
 ### P1 — Correctness and maintainability
 
-1. Update `README.md`, `TESTING.md`, `tests/README.md`, and `RELEASE.md` to reflect Vitest, the current scripts, and removal of the Mocha-era files.
-2. Normalize API URL construction and add HTTP status handling to `findPubMedIdFromPMC`.
-3. Add edge-case tests for identifier extraction, API responses, and URL replacement.
-4. Remove `mockRequestSequence()` or add a test that uses it.
+1. ✅ Update `README.md`, `TESTING.md`, `tests/README.md`, and `RELEASE.md` to reflect Vitest, the current scripts, and removal of the Mocha-era files.
+2. ✅ Normalize API URL construction with `URLSearchParams` and add HTTP `status !== 200` handling to `findPubMedIdFromPMC`.
+3. ✅ Add edge-case tests for identifier extraction, API responses, and URL replacement.
+4. ✅ Remove `mockRequestSequence()` or add a test that uses it.
 
 ## Excluding tests from the production build
 
-**Best practice:** change `tsconfig.json` so the production type-check (`npm run build`) only looks at source files, while Vitest still runs the tests independently.
+**Implemented approach:** keep `tsconfig.json` as the IDE/default config with `include: ["**/*.ts"]` and create a separate `tsconfig.build.json` that extends it with `include: ["main.ts", "src/**/*.ts"]`. The `npm run build` script now runs `tsc -p tsconfig.build.json -noEmit -skipLibCheck` so test-only files can never break the production build, while the IDE still type-checks test files.
 
-Recommended `tsconfig.json` `include`:
+`tsconfig.build.json`:
 
 ```json
 {
-  "include": ["main.ts", "src/**/*.ts"]
+	"extends": "./tsconfig.json",
+	"include": [
+		"main.ts",
+		"src/**/*.ts"
+	]
 }
 ```
 
-Keep `tests/` out of the build include. Vitest has its own TypeScript transform via `vite-node`/`esbuild`, so `tests/**/*.test.ts` will continue to run without being part of the `tsc -noEmit` pass.
+`package.json` build script:
+
+```json
+"build": "tsc -p tsconfig.build.json -noEmit -skipLibCheck && node esbuild.config.mjs production"
+```
+
+Vitest has its own TypeScript transform via `vite-node`/`esbuild`, so `tests/**/*.test.ts` continue to run without being part of the production `tsc` pass.
 
 **Why this is the preferred approach for this project:**
-- `tests/setup.ts` already showed that test-only imports can break `npm run build`.
+- `tests/setup.ts` showed that test-only imports can break `npm run build`.
 - The production build only needs `main.ts` and `src/` bundled.
-- It keeps the test tooling independent from the production bundle.
-
-**Alternative (if you want `tsc` to also type-check tests):** create a separate `tsconfig.test.json` that includes `tests/` and run `npx tsc --project tsconfig.test.json --noEmit` as a dedicated CI step. This is more overhead but gives you full TypeScript checking on tests.
+- It keeps IDE/test tooling type-checking separate from the release bundle.
 
 ### P2 — Policy and current-platform decisions
 
-1. Revisit `esbuild` version and the deprecated `builtin-modules` package.
-2. Keep AI documentation aligned with the actual tool-specific file locations.
+1. ✅ Revisit `esbuild` version and the deprecated `builtin-modules` package.
+2. ✅ Keep AI documentation aligned with the actual tool-specific file locations.

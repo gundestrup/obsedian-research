@@ -131,11 +131,12 @@ GitHub Actions workflow (`.github/workflows/release.yml`) triggers on tag push:
 2. Setup Node.js 20
 3. `npm ci`
 4. `npm run build`
-5. Upload `main.js` + `manifest.json` as GitHub release assets
+5. Upload `main.js`, `manifest.json`, and `styles.css` as GitHub release assets
 
-## Known issues / TODO
+## Build configuration
 
-- Old test files (`test-doi.js`, `test-pmc.js`, `test-pmid.js`, `test-duplicate-prevention.js`, `test-enhanced-detection.js`, `run-tests.js`) are legacy integration test scripts that should be removed or migrated to Vitest
-- `tests/setup.ts` and `tests/test-utils.ts` are leftovers from the Mocha/Chai era and should be removed
-- `.mocharc.json` should be removed after Vitest migration is complete
-- `main.js` is currently committed to git — should be removed and added to `.gitignore`
+- `tsconfig.json` — IDE and lint config, includes `**/*.ts` (covers test files)
+- `tsconfig.build.json` — production build config, extends `tsconfig.json` with `include: ["main.ts", "src/**/*.ts"]` (excludes tests)
+- `npm run build` runs `tsc -p tsconfig.build.json -noEmit -skipLibCheck` then `esbuild.config.mjs production`
+- `esbuild.config.mjs` uses Node's built-in `module.builtinModules` (no external `builtin-modules` package)
+- `src/settings.ts` imports `PluginSettingsHolder` from `src/types.ts` instead of the full plugin class from `main.ts`

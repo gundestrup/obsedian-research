@@ -9,8 +9,8 @@ npm install
 # Run unit tests (fast, no API calls)
 npm test
 
-# Run integration tests (real API calls)
-npm run test:integration
+# Run tests in watch mode
+npm run test:watch
 
 # Run tests with coverage
 npm run test:coverage
@@ -21,14 +21,14 @@ npm run test:coverage
 ### Unit Tests (`npm test`)
 - **Fast**: No external API calls
 - **Reliable**: Consistent results
-- **Files**: `tests/*.ts`
-- **Coverage**: 72 tests covering extraction, formatting, and duplicate detection
+- **Files**: `tests/*.test.ts`
+- **Coverage**: 91 tests covering extraction, formatting, duplicate detection, and API parsing
 
-### Integration Tests (`npm run test:integration`)
-- **Comprehensive**: Real API calls to PubMed/CrossRef
-- **Slower**: Network dependent
-- **Files**: `test-*.js` in root
-- **Purpose**: Validates actual API integration
+### Watch mode (`npm run test:watch`)
+- Re-runs tests automatically when files change
+
+### Coverage (`npm run test:coverage`)
+- Generates a coverage report with v8 provider
 
 ## Test Coverage
 
@@ -58,23 +58,21 @@ npm run test:coverage
 ## Writing New Tests
 
 ```typescript
-import { expect } from './setup';
-import { extractPubMedId } from './test-utils';
+import { describe, it, expect } from 'vitest';
+import { extractPubMedId } from '../src/utils';
 
 describe('PubMed ID Extraction', () => {
   it('should extract ID from standard URL', () => {
     const result = extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/12345/');
-    expect(result).to.equal('12345');
+    expect(result).toBe('12345');
   });
 });
 ```
 
 ## Troubleshooting
 
-- **Network errors**: Check internet connection for integration tests
-- **API rate limits**: Tests include delays, but NCBI may still limit
 - **Missing dependencies**: Run `npm install`
-- **TypeScript errors**: Ensure `@types/*` packages are installed
+- **TypeScript errors**: Ensure `vitest` is installed and your IDE uses the workspace TypeScript version
 
 ## Performance
 

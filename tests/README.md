@@ -1,12 +1,12 @@
 # Test Suite for PubMed Article Fetcher
 
-This directory contains the Jest-based test suite for the PubMed Article Fetcher Obsidian plugin.
+This directory contains the Vitest-based test suite for the PubMed Article Fetcher Obsidian plugin.
 
 ## Structure
 
 ```
 tests/
-├── test-utils.ts              # Shared test utilities and mock data
+├── api.test.ts                # Tests for API functions with mocked requestUrl
 ├── extraction.test.ts         # Tests for ID extraction functions
 ├── duplicate-detection.test.ts # Tests for duplicate citation detection
 └── citation-formatting.test.ts # Tests for citation formatting
@@ -23,49 +23,38 @@ npm run test:watch
 
 # Run tests with coverage report
 npm run test:coverage
-
-# Run legacy integration tests (actual API calls)
-npm run test:legacy
 ```
 
 ## Test Framework
 
 This test suite uses:
-- **Mocha** - Fast, flexible testing framework (community standard for Obsidian plugins)
-- **Chai** - Expressive assertion library
-- **Sinon** - Mocking and stubbing library
-- **sinon-chai** - Chai plugin for Sinon assertions
-- **tsx** - TypeScript loader for Mocha
-- **c8** - Code coverage tool
+- **Vitest** - Fast Vite-native test framework
+- **`vi.fn()`** - Built-in mocking provided by Vitest
+- **`@vitest/coverage-v8`** - Coverage provider
 
 ## Test Categories
 
-### Unit Tests (Jest)
+### Unit Tests (Vitest)
 Fast, isolated tests that don't make external API calls:
+- `api.test.ts` - API functions with mocked `requestUrl`
 - `extraction.test.ts` - ID extraction from URLs and text
 - `duplicate-detection.test.ts` - Citation duplicate detection logic
 - `citation-formatting.test.ts` - Citation string formatting
 
-### Integration Tests (Legacy)
-Slower tests that make actual API calls to PubMed and CrossRef:
-- `test-pmid.js` - PubMed ID processing
-- `test-pmc.js` - PMC ID processing
-- `test-doi.js` - DOI processing
-- `test-duplicate-prevention.js` - Duplicate prevention
-- `test-enhanced-detection.js` - Enhanced citation detection
+There are no integration tests; all API calls are mocked in unit tests.
 
 ## Writing New Tests
 
 ### Example Test
 
 ```typescript
-import { expect } from './setup';
-import { extractPubMedId } from './test-utils';
+import { describe, it, expect } from 'vitest';
+import { extractPubMedId } from '../src/utils';
 
 describe('My Feature', () => {
   it('should do something', () => {
     const result = extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/12345/');
-    expect(result).to.equal('12345');
+    expect(result).toBe('12345');
   });
 });
 ```
@@ -75,7 +64,7 @@ describe('My Feature', () => {
 1. **Use descriptive test names** - Test names should clearly describe what is being tested
 2. **Test edge cases** - Include tests for empty strings, null values, invalid inputs
 3. **Keep tests isolated** - Each test should be independent
-4. **Use test-utils** - Import shared utilities from `test-utils.ts` to avoid duplication
+4. **Import from `src/`** - Re-use real utility and API functions; avoid duplicating logic in tests
 5. **Mock external dependencies** - Don't make real API calls in unit tests
 
 ## Coverage
@@ -98,7 +87,7 @@ These tests are designed to run in CI/CD pipelines. They are fast, reliable, and
 Run `npm install` to ensure all dependencies are installed.
 
 ### TypeScript errors in tests
-Make sure `@types/mocha`, `@types/chai`, and `@types/sinon` are installed and your IDE is using the workspace TypeScript version.
+Make sure `vitest` is installed and your IDE is using the workspace TypeScript version.
 
 ### Watch mode crashes on syntax errors
 This is expected behavior with Mocha + tsx. Fix the syntax error and the tests will auto-restart.

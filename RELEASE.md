@@ -26,7 +26,7 @@ git push && git push --tags
 
 ### Step 2: `npm version` does everything:
 1. ✅ **Pre-version Validation**: Changelog + Quality checks (before version update)
-   - Lint + Unit Tests + Integration Tests + Build
+   - Lint + Unit Tests + Build
    - Changelog validation for NEXT version
 2. ✅ **Version Update**: npm updates package.json (only if validation passes)
 3. ✅ **Version Sync**: Updates manifest.json and versions.json to match
@@ -37,7 +37,7 @@ git push && git push --tags
 ### Step 4: GitHub Actions creates release:
 - 📦 Builds plugin
 - 🏷️ Creates GitHub release
-- 📎 Attaches main.js and manifest.json
+- 📎 Attaches main.js, manifest.json, and styles.css
 
 ## 📋 Pre-Release Requirements
 
@@ -61,8 +61,7 @@ git status  # Should show "working tree clean"
 
 **`npm version` will FAIL BEFORE updating versions if:**
 - ❌ Lint errors found
-- ❌ Unit tests fail (72 tests)
-- ❌ Integration tests fail (5 suites)
+- ❌ Unit tests fail (91 tests)
 - ❌ Build fails
 - ❌ No changelog entry for the NEXT version
 - ❌ Git working directory not clean
@@ -75,10 +74,9 @@ git status  # Should show "working tree clean"
 1. **Check the error message** - It will tell you what failed
 2. **Fix the issue** - Run the failing command manually:
    ```bash
-   npm run lint           # For lint errors
-   npm test               # For unit test errors
-   npm run test:integration # For integration test errors
-   npm run build          # For build errors
+   npm run lint    # For lint errors
+   npm test        # For unit test errors
+   npm run build   # For build errors
    ```
 3. **Add changelog entry** if missing
 4. **Try again**: `npm version patch`
