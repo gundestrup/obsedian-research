@@ -88,24 +88,28 @@ function mockRequest(response: RequestUrlResponse): Mock<RequestFunction> {
 Per the official [Submission requirements for plugins](https://docs.obsidian.md/Plugins/Releasing/Submission+requirements+for+plugins) and [Manifest reference](https://docs.obsidian.md/Reference/Manifest):
 
 - **`fundingUrl: ""`** — confirmed wrong. Official guidance: *"If you don't accept donations, remove `fundingUrl` from your manifest."* An empty string is not the same as omitting the key and should be deleted, not left blank.
-- **`minAppVersion: "0.15.0"`** — official guidance: *"should be set to the minimum required version of the Obsidian app that your plugin is compatible with. If you don't know what an appropriate version number is, use the latest stable build number."* `0.15.0` (released 2022) predates APIs the plugin may rely on (e.g. `Setting.setHeading()`, a newer addition). Determine the true minimum from the APIs actually used, then update `manifest.json` and `versions.json` together — don't guess a round number like `1.0.0` without checking.
+- **`minAppVersion: "0.15.0"`** — official guidance: *"should be set to the minimum required version of the Obsidian app that your plugin is compatible with. If you don't know what an appropriate version number is, use the latest stable build number."* `0.15.0` (released 2022) predates APIs the plugin relies on (e.g. `Setting.setHeading()`). **Maintainer decision:** set `minAppVersion` to the latest stable Obsidian release version, and update `versions.json` with the same value. Because the plugin uses only standard vault/UI APIs and does not require Node/Electron APIs, this is the safe best-practice default.
 - **`isDesktopOnly: false`** is correct and consistent — the plugin only uses `requestUrl`, `Notice`, `Modal`, `Setting`, and vault APIs, none of which are Node/Electron-only.
 - **`id: "pubmed-fetcher"`** is compliant (lowercase + hyphens, doesn't end in "plugin", doesn't contain "obsidian").
 - **`description`** is compliant: action-oriented, ends with a period, under 250 characters, no emoji.
 
-### `.gitignore` and `main.js` policy — corrected
+### `.gitignore` and `main.js` policy — maintainer decision
 
-A previous version of this review called this "a policy choice, either is valid." That was too lenient. The canonical `obsidianmd/obsidian-sample-plugin` [`AGENTS.md`](https://github.com/obsidianmd/obsidian-sample-plugin/blob/master/AGENTS.md) is explicit: *"Do not commit build artifacts: Never commit `node_modules/`, `main.js`, or other generated files to version control."* This is current, authoritative guidance from the Obsidian team's own plugin template, not just a style preference.
+**Decision:** keep `main.js` committed to git. This is a deliberate, valid policy choice for this repository: it supports users who install directly from the source/branch (e.g. BRAT beta installs) and ensures the distributable is always present alongside the source. The `.gitignore` exception `!main.js` should remain.
 
-`main.js` **is** currently tracked in this repo (`git ls-files` confirms it). It should be removed from git and the `.gitignore` exception (`!main.js`) should be dropped, since CI already builds and uploads it as a release asset — which is the correct approach per the official [Release your plugin with GitHub Actions](https://docs.obsidian.md/Plugins/Releasing/Release+your+plugin+with+GitHub+Actions) guide.
+CI will continue to build and upload `main.js` to GitHub releases as well, so both distribution channels are covered. The key requirement is consistency: because `main.js` is committed, the release workflow should still produce it during `npm run build`, and `manifest.json` must always stay in sync with `package.json`.
 
-### Legacy files remaining
-These should be removed after the Vitest migration:
+### Legacy files remaining — maintainer decision: remove
+
+**Decision:** these files are no longer necessary now that the Vitest migration is complete. They should all be deleted, and no `test:integration` script should be restored.
+
 - `.mocharc.json`
 - `tests/setup.ts`
 - `tests/test-utils.ts`
 - `run-tests.js`
 - `test-doi.js`, `test-pmc.js`, `test-pmid.js`, `test-duplicate-prevention.js`, `test-enhanced-detection.js`
+
+`version-bump.mjs` must be updated to remove the `npm run test:integration` call. `RELEASE.md` and `TESTING.md` should be updated to remove references to integration tests.
 
 ### Documentation out of sync
 - `README.md` lists old command names (`"PubMed Article Fetcher Note"`, `"Link All"`, `"Link Global"`) and mentions integration tests / 72 tests / Mocha-era coverage. It needs to match the current `main.ts` command IDs and Vitest setup.
@@ -136,7 +140,7 @@ The release workflow (`.github/workflows/release.yml`) uploads only `main.js` an
 - `package-lock.json` still describes the former Mocha/Chai dependency graph and must be regenerated before CI can use `npm ci` reliably.
 - `esbuild` is pinned to `"0.25.0"`. The previous `package.json` had `"0.27.3"`, so this is an older version. Verify compatibility and update deliberately rather than downgrading accidentally.
 - `builtin-modules` is flagged by module-replacement lint as deprecated. Consider replacing it with a maintained Node built-in module source or a deliberately maintained static list in `esbuild.config.mjs`.
-- Do not use `"latest"` for the `obsidian` development dependency in a reproducible release project. Pin a known compatible Obsidian API version or use a deliberate update policy, then regenerate the lockfile.
+- Pin the `obsidian` npm package to the version that corresponds to the chosen `minAppVersion` rather than leaving it as `"latest"`. This makes the type definitions reproducible and avoids accidental API breakage on the next `npm install`. Regenerate `package-lock.json` after changing this.
 
 ## Minor code-quality notes
 
@@ -153,29 +157,47 @@ The release workflow (`.github/workflows/release.yml`) uploads only `main.js` an
 
 ### P0 — Release and verification blockers (confirmed by running the actual toolchain)
 
-1. Commit the regenerated `package-lock.json` (already fixed locally via `npm install`; verified 0 vulnerabilities, Vitest present, Mocha/Chai/Sinon/c8 gone).
+1. Update `tsconfig.json` to exclude `tests/` from the production build `include` array (best practice shown below under "Excluding tests from the production build"), so test-only files can never break `npm run build`.
 2. Delete `tests/setup.ts` — it currently **breaks `npm run build`** with real `tsc` errors (`TS1192`, `TS2307`), not just lint warnings.
 3. Delete `tests/test-utils.ts` — confirmed dead code, unused by any current test.
-4. Fix `mockRequest()` in `tests/api.test.ts` to preserve the `Mock` type, resolving the 2 confirmed `@typescript-eslint/no-unsafe-assignment` errors.
-5. Update `version-bump.mjs` so it no longer invokes the removed `test:integration`, or restore a deliberately maintained integration-test command.
-6. Add `styles.css` to the GitHub release asset list in `release.yml`.
-7. Remove `main.js` from git tracking and drop the `!main.js` exception in `.gitignore` (per official `obsidian-sample-plugin` guidance — CI already builds and uploads it correctly).
-8. Re-run `npm run lint`, `npm test`, and `npm run build` to confirm a fully clean pipeline.
+4. Delete `.mocharc.json`, `run-tests.js`, and all `test-*.js` legacy integration scripts.
+5. Fix `mockRequest()` in `tests/api.test.ts` to use `MockedFunction<RequestFunction>` instead of `RequestFunction`, resolving the 2 confirmed `@typescript-eslint/no-unsafe-assignment` errors.
+6. Update `version-bump.mjs` to remove the `npm run test:integration` call.
+7. Add `styles.css` to the GitHub release asset list in `release.yml`.
+8. Keep `main.js` in git; ensure `.gitignore` still contains `!main.js`.
+9. Update `manifest.json` `minAppVersion` to the latest stable Obsidian release and mirror it in `versions.json`.
+10. Pin `obsidian` in `package.json` to the npm version matching `minAppVersion`, then regenerate and commit `package-lock.json`.
+11. Re-run `npm run lint`, `npm test`, and `npm run build` to confirm a fully clean pipeline.
 
 ### P1 — Correctness and maintainability
 
 1. Update `README.md`, `TESTING.md`, `tests/README.md`, and `RELEASE.md` to reflect Vitest, the current scripts, and removal of the Mocha-era files.
-2. Remove `.mocharc.json`.
-3. Either remove or explicitly maintain the legacy `test-*.js` integration scripts with a documented command.
-4. Normalize API URL construction and add HTTP status handling to `findPubMedIdFromPMC`.
-5. Add edge-case tests for identifier extraction, API responses, and URL replacement.
-6. Remove `mockRequestSequence()` or add a test that uses it.
+2. Normalize API URL construction and add HTTP status handling to `findPubMedIdFromPMC`.
+3. Add edge-case tests for identifier extraction, API responses, and URL replacement.
+4. Remove `mockRequestSequence()` or add a test that uses it.
+
+## Excluding tests from the production build
+
+**Best practice:** change `tsconfig.json` so the production type-check (`npm run build`) only looks at source files, while Vitest still runs the tests independently.
+
+Recommended `tsconfig.json` `include`:
+
+```json
+{
+  "include": ["main.ts", "src/**/*.ts"]
+}
+```
+
+Keep `tests/` out of the build include. Vitest has its own TypeScript transform via `vite-node`/`esbuild`, so `tests/**/*.test.ts` will continue to run without being part of the `tsc -noEmit` pass.
+
+**Why this is the preferred approach for this project:**
+- `tests/setup.ts` already showed that test-only imports can break `npm run build`.
+- The production build only needs `main.ts` and `src/` bundled.
+- It keeps the test tooling independent from the production bundle.
+
+**Alternative (if you want `tsc` to also type-check tests):** create a separate `tsconfig.test.json` that includes `tests/` and run `npx tsc --project tsconfig.test.json --noEmit` as a dedicated CI step. This is more overhead but gives you full TypeScript checking on tests.
 
 ### P2 — Policy and current-platform decisions
 
-1. Determine the true supported Obsidian minimum version from the APIs actually used (e.g. `Setting.setHeading()`) rather than leaving the outdated `0.15.0` or guessing `1.0.0`.
-2. Remove the empty `fundingUrl` field entirely per official Obsidian submission requirements.
-3. Keep `manifest.json` and `versions.json` synchronized.
-4. Replace the `obsidian: "latest"` dependency with a deliberate versioning policy, then regenerate the lockfile again if it changes.
-5. Revisit `esbuild` version and the deprecated `builtin-modules` package.
-6. Keep AI documentation aligned with the actual tool-specific file locations.
+1. Revisit `esbuild` version and the deprecated `builtin-modules` package.
+2. Keep AI documentation aligned with the actual tool-specific file locations.
