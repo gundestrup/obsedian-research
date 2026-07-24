@@ -17,14 +17,17 @@ Fetch article metadata from PubMed, PMC, and DOI links automatically.
 2. Use any of these methods:
 
 ### Command Palette
+
 - "Create new note with article info" - Create a new note with article metadata
 - Enter ID/URL: `38570095` or `https://pubmed.ncbi.nlm.nih.gov/38570095/`
 
 ### Right-Click Menu
+
 - Select text → "Update selected link only"
 - Replaces selected text with a formatted citation
 
 ### Batch Processing
+
 - "Update all links in current note" - Process the active note
 - "Update all links in all notes" - Process the entire vault (enable in settings first)
 

@@ -2,7 +2,7 @@
 
 > **Canonical AI/LLM context file.** All AI assistant config files (`CLAUDE.md`, `.windsurf/rules`, `.devin/workflows`) link here.
 >
-> **DeepWiki:** https://deepwiki.com/gundestrup/obsedian-research
+> **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>
 
 ## Project overview
 
@@ -11,8 +11,8 @@ Obsidian plugin that fetches academic article metadata from **PubMed**, **PMC**,
 - **Plugin ID:** `pubmed-fetcher`
 - **Author:** Svend Gundestrup
 - **License:** AGPL-3.0
-- **Repo:** https://github.com/gundestrup/obsedian-research
-- **DeepWiki:** https://deepwiki.com/gundestrup/obsedian-research
+- **Repo:** <https://github.com/gundestrup/obsedian-research>
+- **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>
 
 ## Tech stack
 
@@ -27,7 +27,7 @@ Obsidian plugin that fetches academic article metadata from **PubMed**, **PMC**,
 
 ## Project structure
 
-```
+```typescript
 main.ts                  # Plugin entry point — PubMedFetcherPlugin class
 src/
   types.ts               # Shared interfaces, types, DEFAULT_SETTINGS
@@ -52,7 +52,7 @@ tsconfig.json            # TypeScript strict config
 
 ### Module dependency graph
 
-```
+```typescript
 main.ts
   ├── src/types.ts        (types only, no runtime deps)
   ├── src/utils.ts        (pure functions, imports types only)
@@ -127,6 +127,7 @@ npm run release      # lint + test + build (used before version bump)
 ## CI/CD
 
 GitHub Actions workflow (`.github/workflows/release.yml`) triggers on tag push:
+
 1. Checkout code
 2. Setup Node.js 20
 3. `npm ci`

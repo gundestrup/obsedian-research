@@ -334,7 +334,6 @@ var FolderSelectionModal = class extends import_obsidian.Modal {
     const allFiles = this.app.vault.getAllLoadedFiles();
     const folders = allFiles.filter((f) => "children" in f).map((f) => f.path).sort();
     const allNotesBtn = contentEl.createEl("button", {
-      // eslint-disable-next-line obsidianmd/ui/sentence-case -- button text with emoji prefix
       text: "\u{1F4C1} All notes in vault",
       cls: "pubmed-fetcher-button-full"
     });
@@ -343,7 +342,7 @@ var FolderSelectionModal = class extends import_obsidian.Modal {
       this.close();
     };
     contentEl.createEl("p", { text: "Or select a specific folder" });
-    const folderList = contentEl.createEl("div", { cls: "pubmed-fetcher-folder-list" });
+    const folderList = contentEl.createDiv({ cls: "pubmed-fetcher-folder-list" });
     if (folders.length === 0) {
       folderList.createEl("p", { text: "No folders found in the vault" });
     } else {
@@ -410,24 +409,33 @@ var PubMedFetcherSettingTab = class extends import_obsidian2.PluginSettingTab {
     super(app, plugin);
     this.plugin = plugin;
   }
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
-    new import_obsidian2.Setting(containerEl).setName("NCBI API key (optional)").setDesc("Enter your NCBI API key for higher rate limits. Get one at https://www.ncbi.nlm.nih.gov/account/").addText(
-      (text) => text.setPlaceholder("Your NCBI API key").setValue(this.plugin.settings.apiKey || "").onChange(async (value) => {
-        this.plugin.settings.apiKey = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName("Enable global update command").setDesc('\u26A0\uFE0F DANGEROUS: Enable the "Link global" command that can update ALL notes in your vault. This command will modify multiple files. Only enable if you understand the risks and have backups.').addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.enableGlobalCommand || false).onChange(async (value) => {
-        this.plugin.settings.enableGlobalCommand = value;
-        await this.plugin.saveSettings();
-        new import_obsidian2.Notice(
-          `Global command ${value ? "enabled" : "disabled"}. Please reload Obsidian for changes to take effect.`
-        );
-      })
-    );
+  getSettingDefinitions() {
+    return [
+      {
+        name: "NCBI API key (optional)",
+        desc: "Enter your NCBI API key for higher rate limits. Get one at https://www.ncbi.nlm.nih.gov/account/",
+        control: {
+          type: "text",
+          key: "apiKey",
+          placeholder: "Your NCBI API key"
+        }
+      },
+      {
+        name: "Enable global update command",
+        desc: '\u26A0\uFE0F DANGEROUS: Enable the "Link global" command that can update ALL notes in your vault. This command will modify multiple files. Only enable if you understand the risks and have backups.',
+        render: (setting) => {
+          setting.addToggle(
+            (toggle) => toggle.setValue(this.plugin.settings.enableGlobalCommand || false).onChange(async (value) => {
+              this.plugin.settings.enableGlobalCommand = value;
+              await this.plugin.saveSettings();
+              new import_obsidian2.Notice(
+                `Global command ${value ? "enabled" : "disabled"}. Please reload Obsidian for changes to take effect.`
+              );
+            })
+          );
+        }
+      }
+    ];
   }
 };
 

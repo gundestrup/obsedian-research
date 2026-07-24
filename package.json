@@ -19,16 +19,16 @@
 	"author": "Svend Gundestrup",
 	"license": "AGPL-3.0",
 	"devDependencies": {
-		"@types/node": "^22.10.0",
-		"@typescript-eslint/eslint-plugin": "^8.57.0",
-		"@typescript-eslint/parser": "^8.57.0",
-		"@vitest/coverage-v8": "^3.0.0",
+		"@types/node": "^26.0.0",
+		"@typescript-eslint/eslint-plugin": "^8.65.0",
+		"@typescript-eslint/parser": "^8.65.0",
+		"@vitest/coverage-v8": "^4.0.0",
 		"esbuild": "^0.28.0",
-		"eslint": "^9.20.0",
-		"eslint-plugin-obsidianmd": "^0.1.9",
+		"eslint": "^10.0.0",
+		"eslint-plugin-obsidianmd": "^0.4.0",
 		"obsidian": "1.13.1",
 		"tslib": "^2.8.1",
 		"typescript": "^5.7.0",
-		"vitest": "^3.0.0"
+		"vitest": "^4.0.0"
 	}
 }

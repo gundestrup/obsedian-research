@@ -9,39 +9,34 @@ export class PubMedFetcherSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-
-		new Setting(containerEl)
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- NCBI is a proper noun
-			.setName('NCBI API key (optional)')
-			.setDesc('Enter your NCBI API key for higher rate limits. Get one at https://www.ncbi.nlm.nih.gov/account/')
-			.addText((text) =>
-				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case -- NCBI is a proper noun
-					.setPlaceholder('Your NCBI API key')
-					.setValue(this.plugin.settings.apiKey || '')
-					.onChange(async (value) => {
-						this.plugin.settings.apiKey = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName('Enable global update command')
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- ALL is emphasized for warning
-			.setDesc('⚠️ DANGEROUS: Enable the "Link global" command that can update ALL notes in your vault. This command will modify multiple files. Only enable if you understand the risks and have backups.')
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.enableGlobalCommand || false)
-					.onChange(async (value) => {
-						this.plugin.settings.enableGlobalCommand = value;
-						await this.plugin.saveSettings();
-						new Notice(
-							`Global command ${value ? 'enabled' : 'disabled'}. Please reload Obsidian for changes to take effect.`
-						);
-					})
-			);
+	getSettingDefinitions() {
+		return [
+			{
+				name: 'NCBI API key (optional)',
+				desc: 'Enter your NCBI API key for higher rate limits. Get one at https://www.ncbi.nlm.nih.gov/account/',
+				control: {
+					type: 'text' as const,
+					key: 'apiKey' as const,
+					placeholder: 'Your NCBI API key',
+				},
+			},
+			{
+				name: 'Enable global update command',
+				desc: '⚠️ DANGEROUS: Enable the "Link global" command that can update ALL notes in your vault. This command will modify multiple files. Only enable if you understand the risks and have backups.',
+				render: (setting: Setting) => {
+					setting.addToggle((toggle) =>
+						toggle
+							.setValue(this.plugin.settings.enableGlobalCommand || false)
+							.onChange(async (value) => {
+								this.plugin.settings.enableGlobalCommand = value;
+								await this.plugin.saveSettings();
+								new Notice(
+									`Global command ${value ? 'enabled' : 'disabled'}. Please reload Obsidian for changes to take effect.`
+								);
+							})
+					);
+				},
+			},
+		];
 	}
 }

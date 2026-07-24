@@ -15,7 +15,6 @@ export class FolderSelectionModal extends Modal {
 			.setName('Select folder for global update')
 			.setHeading();
 
-		// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed and DOI are proper nouns, ALL is emphasized
 		new Setting(contentEl).setDesc('⚠️ This will update ALL PubMed/DOI links in the selected folder and its subfolders.');
 
 		const allFiles = this.app.vault.getAllLoadedFiles();
@@ -25,7 +24,6 @@ export class FolderSelectionModal extends Modal {
 			.sort();
 
 		const allNotesBtn = contentEl.createEl('button', {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- button text with emoji prefix
 			text: '📁 All notes in vault',
 			cls: 'pubmed-fetcher-button-full',
 		});
@@ -36,7 +34,7 @@ export class FolderSelectionModal extends Modal {
 
 		contentEl.createEl('p', { text: 'Or select a specific folder' });
 
-		const folderList = contentEl.createEl('div', { cls: 'pubmed-fetcher-folder-list' });
+		const folderList = contentEl.createDiv({ cls: 'pubmed-fetcher-folder-list' });
 
 		if (folders.length === 0) {
 			folderList.createEl('p', { text: 'No folders found in the vault' });
@@ -80,7 +78,6 @@ export class ArticleInputModal extends Modal {
 		const { contentEl } = this;
 
 		new Setting(contentEl)
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed and DOI are proper nouns
 			.setName('Enter PubMed ID or DOI')
 			.setHeading();
 

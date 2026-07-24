@@ -24,7 +24,8 @@ git push && git push --tags
 
 ## 🔄 What Happens Automatically
 
-### Step 2: `npm version` does everything:
+### Step 2: `npm version` does everything
+
 1. ✅ **Pre-version Validation**: Changelog + Quality checks (before version update)
    - Lint + Unit Tests + Build
    - Changelog validation for NEXT version
@@ -34,7 +35,8 @@ git push && git push --tags
 5. ✅ **Git Commit**: Creates commit with version bump
 6. ✅ **Git Tag**: Creates and pushes tag (triggers GitHub Actions)
 
-### Step 4: GitHub Actions creates release:
+### Step 4: GitHub Actions creates release
+
 - 📦 Builds plugin
 - 🏷️ Creates GitHub release
 - 📎 Attaches main.js, manifest.json, and styles.css
@@ -44,6 +46,7 @@ git push && git push --tags
 **Must be done BEFORE `npm version`:**
 
 ### 1. Update CHANGELOG.md
+
 ```markdown
 ## [1.2.2] - 2026-03-12
 ### Added
@@ -53,6 +56,7 @@ git push && git push --tags
 ```
 
 ### 2. Clean Working Directory
+
 ```bash
 git status  # Should show "working tree clean"
 ```
@@ -60,6 +64,7 @@ git status  # Should show "working tree clean"
 ## 🛡️ Automated Validation
 
 **`npm version` will FAIL BEFORE updating versions if:**
+
 - ❌ Lint errors found
 - ❌ Unit tests fail (91 tests)
 - ❌ Build fails
@@ -70,24 +75,29 @@ git status  # Should show "working tree clean"
 
 ## 🚨 Troubleshooting
 
-### If `npm version` fails:
+### If `npm version` fails
+
 1. **Check the error message** - It will tell you what failed
 2. **Fix the issue** - Run the failing command manually:
+
    ```bash
    npm run lint    # For lint errors
    npm test        # For unit test errors
    npm run build   # For build errors
    ```
+
 3. **Add changelog entry** if missing
 4. **Try again**: `npm version patch`
 
-### If GitHub Actions fails:
+### If GitHub Actions fails
+
 - Check the Actions tab on GitHub
 - Usually due to build issues or network problems
 
 ## 📦 Release Files
 
 **Automatically attached to GitHub release:**
+
 - `main.js` - Compiled plugin
 - `manifest.json` - Plugin metadata
 - `styles.css` - Styles (if exists)

@@ -26,6 +26,11 @@ export default defineConfig([
     },
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }],
+      "obsidianmd/ui/sentence-case": ["error", {
+        acronyms: ["NCBI", "DOI", "PMC", "API", "URL", "ID"],
+        ignoreWords: ["PubMed", "Obsidian"],
+        ignoreRegex: ["⚠️.*", "📁.*"],
+      }],
     },
   },
   {
