@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-pubmed-fetcher",
-	"version": "1.3.0",
+	"version": "1.4.0",
 	"description": "Obsidian plugin to fetch article metadata from PubMed ID or DOI",
 	"main": "main.js",
 	"scripts": {
