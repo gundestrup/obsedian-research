@@ -2,6 +2,8 @@
 
 Fetch article metadata from PubMed, PMC, and DOI links automatically.
 
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/obsedian-research)
+
 ## Features
 
 - **Multiple Input Formats**: PubMed ID, PMC ID, DOI, or their URLs
