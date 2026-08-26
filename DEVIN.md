@@ -1,6 +1,6 @@
 # Devin AI Instructions
 
-> **Read [`AI_INSTRUCTIONS.md`](./AI_INSTRUCTIONS.md) first** — it contains the complete project context, architecture, coding standards, and testing guidelines for this repository.
+> **Read [`AGENTS.md`](./AGENTS.md) first** — it contains the complete project context, architecture, coding standards, and testing guidelines for this repository.
 >
 > **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>
 
@@ -16,4 +16,4 @@
 - **No `console.debug`**, no inline styles, no `createEl('h2')` — use `Setting.setHeading()`
 - **API pattern:** Functions in `src/api.ts` accept `RequestFunction` param for testability — do not call `requestUrl` directly
 - **Proper nouns** (PubMed, DOI, PMC, NCBI) need eslint-disable comments for sentence-case rule
-- See `AI_INSTRUCTIONS.md` for full architecture, module dependency graph, and API documentation.
+- See `AGENTS.md` for full architecture, module dependency graph, and API documentation.

@@ -1,5 +1,7 @@
-# AI Instructions — PubMed Article Fetcher Obsidian Plugin
+# AGENTS.md — PubMed Article Fetcher Obsidian Plugin
 
+> **Single source of truth for all coding agents working on this project.**
+>
 > **Canonical AI/LLM context file.** All AI assistant config files (`CLAUDE.md`, `.windsurf/rules`, `.devin/workflows`) link here.
 >
 > **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>

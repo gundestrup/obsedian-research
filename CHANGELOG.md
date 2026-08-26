@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- **AI_INSTRUCTIONS.md → AGENTS.md**: Renamed to follow the agents.md open convention. AGENTS.md is now the single source of truth for all coding agents. `CLAUDE.md`, `DEVIN.md`, and `WINDSURF.md` updated to point to `AGENTS.md`.
+
 ## [1.4.0] - 2026-07-24
 
 ### Changed

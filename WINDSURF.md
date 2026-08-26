@@ -1,6 +1,6 @@
 # Windsurf AI Rules
 
-> **Read [`AI_INSTRUCTIONS.md`](./AI_INSTRUCTIONS.md) first** — it contains the complete project context, architecture, coding standards, and testing guidelines for this repository.
+> **Read [`AGENTS.md`](./AGENTS.md) first** — it contains the complete project context, architecture, coding standards, and testing guidelines for this repository.
 >
 > **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>
 
@@ -13,4 +13,4 @@
 - Use tabs for indentation. Strict TypeScript is enabled.
 - `eslint-plugin-obsidianmd` enforces Obsidian best practices (sentence-case UI text, no `createEl('h2')`, use `Setting.setHeading()`).
 - Tests use Vitest 3 with `vi.fn()` mocks for API calls. No real network calls in tests.
-- See `AI_INSTRUCTIONS.md` for full details.
+- See `AGENTS.md` for full details.
