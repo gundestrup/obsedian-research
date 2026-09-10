@@ -4,6 +4,7 @@
 
 ### Changed
 - Updated release actions to Node.js 24-compatible versions to remove deprecated Node.js 20 action runtimes.
+- Configured Dependabot to defer TypeScript 7 and Vitest 5 major updates until their compatibility migrations are reviewed.
 
 ## [1.4.2] - 2026-09-10
 
