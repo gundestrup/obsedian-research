@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Updated CI and release workflows to Node.js 24 and Node 24-compatible GitHub Actions.
+
 ## [1.4.1] - 2026-09-10
 
 ### Added
