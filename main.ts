@@ -61,7 +61,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 				if (selection) {
 					void this.fetchArticleAndInsert(selection, editor);
 				} else {
-					// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed and DOI are proper nouns
 					new Notice('Please select a PubMed ID or DOI first');
 				}
 			}
@@ -115,13 +114,13 @@ export default class PubMedFetcherPlugin extends Plugin {
 	}
 
 	private handleError(error: unknown, context: string): void {
-		console.error(`Error in ${context}:`, error);
+		console.error('Error in', context, error);
 		const message = error instanceof Error ? error.message : 'Unknown error occurred';
 		new Notice(`Error fetching article: ${message}`);
 	}
 
 	private async delay(ms: number): Promise<void> {
-		return new Promise(resolve => setTimeout(resolve, ms));
+		return new Promise(resolve => window.setTimeout(resolve, ms));
 	}
 
 	async fetchArticle(input: string) {
@@ -140,7 +139,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 			if (pubmedId) {
 				await this.fetchByPubMedIdWithPMC(pubmedId, pmcId);
 			} else {
-				// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed and PMC are proper nouns
 				new Notice('Could not find PubMed ID for the given PMC ID.');
 			}
 			return;
@@ -157,7 +155,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 			return;
 		}
 
-		// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed and DOI are proper nouns
 		new Notice('Invalid input. Please enter a valid PubMed ID, DOI, or URL');
 	}
 
@@ -178,7 +175,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 				articleInfo.pmcId = pmcId;
 				this.insertArticleInfo(articleInfo, editor);
 			} else {
-				// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed and PMC are proper nouns
 				new Notice('Could not find PubMed ID for the given PMC ID.');
 			}
 			return;
@@ -195,13 +191,11 @@ export default class PubMedFetcherPlugin extends Plugin {
 			return;
 		}
 
-		// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed, PMC, and DOI are proper nouns
 		new Notice('Invalid input. Please enter a valid PubMed ID, PMC ID, DOI, or URL');
 	}
 
 	async fetchByPubMedId(pubmedId: string) {
 		try {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed is a proper noun
 			new Notice('Fetching article from PubMed');
 			const articleInfo = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
 			void this.displayArticleInfo(articleInfo);
@@ -212,7 +206,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 
 	async fetchByPubMedIdAndInsert(pubmedId: string, editor: Editor) {
 		try {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed is a proper noun
 			new Notice('Fetching article from PubMed');
 			const articleInfo = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
 			this.insertArticleInfo(articleInfo, editor);
@@ -223,7 +216,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 
 	async fetchByDOI(doi: string) {
 		try {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- DOI is a proper noun
 			new Notice('Fetching article from DOI');
 			const articleInfo = await fetchDOIApiData(doi, this.settings.articleType || 'Article', this.requestFn);
 			void this.displayArticleInfo(articleInfo);
@@ -234,7 +226,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 
 	async fetchByDOIAndInsert(doi: string, editor: Editor) {
 		try {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- DOI is a proper noun
 			new Notice('Fetching article from DOI');
 			const articleInfo = await fetchDOIApiData(doi, this.settings.articleType || 'Article', this.requestFn);
 			this.insertArticleInfo(articleInfo, editor);
@@ -287,7 +278,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 
 	async fetchByPubMedIdWithPMC(pubmedId: string, pmcId: string) {
 		try {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed is a proper noun
 			new Notice('Fetching article from PubMed');
 			const articleInfo = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
 			articleInfo.pmcId = pmcId;
@@ -299,7 +289,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 
 	async fetchByPubMedIdWithDOI(pubmedId: string, doi: string) {
 		try {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed is a proper noun
 			new Notice('Fetching article from PubMed');
 			const articleInfo = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
 			articleInfo.doi = doi;
@@ -311,7 +300,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 
 	async fetchByPubMedIdAndInsertWithDOI(pubmedId: string, doi: string, editor: Editor) {
 		try {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed is a proper noun
 			new Notice('Fetching article from PubMed');
 			const articleInfo = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
 			articleInfo.doi = doi;
@@ -328,8 +316,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 		const totalLinks = pubmedIds.length + pmcIds.length + dois.length;
 
 		if (totalLinks === 0) {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- PubMed, PMC, and DOI are proper nouns
-			new Notice('No PubMed IDs, PMC IDs, or DOIs found in this note');
+				new Notice('No PubMed IDs, PMC IDs, or DOIs found in this note');
 			return;
 		}
 
@@ -351,7 +338,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				}
 				await this.delay(350);
 			} catch (error) {
-				console.error(`Error processing PubMed ID ${pubmedId}:`, error);
+				console.error('Error processing PubMed ID', pubmedId, error);
 			}
 		}
 
@@ -378,7 +365,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 					}
 				}
 			} catch (error) {
-				console.error(`Error processing PMC ID ${pmcId}:`, error);
+				console.error('Error processing PMC ID', pmcId, error);
 			}
 		}
 
@@ -396,7 +383,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				}
 				await this.delay(350);
 			} catch (error) {
-				console.error(`Error processing DOI ${doi}:`, error);
+				console.error('Error processing DOI', doi, error);
 			}
 		}
 
@@ -456,7 +443,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 						}
 						await this.delay(350);
 					} catch (error) {
-						console.error(`Error processing PubMed ID ${pubmedId} in ${file.path}:`, error);
+						console.error('Error processing PubMed ID in file', pubmedId, file.path, error);
 					}
 				}
 
@@ -483,7 +470,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 							}
 						}
 					} catch (error) {
-						console.error(`Error processing PMC ID ${pmcId} in ${file.path}:`, error);
+						console.error('Error processing PMC ID in file', pmcId, file.path, error);
 					}
 				}
 
@@ -501,7 +488,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 						}
 						await this.delay(350);
 					} catch (error) {
-						console.error(`Error processing DOI ${doi} in ${file.path}:`, error);
+						console.error('Error processing DOI in file', doi, file.path, error);
 					}
 				}
 
@@ -510,7 +497,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				}
 
 			} catch (error) {
-				console.error(`Error processing file ${file.path}:`, error);
+				console.error('Error processing file', file.path, error);
 			}
 		}
 

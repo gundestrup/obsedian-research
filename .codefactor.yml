@@ -1,0 +1,8 @@
+# CodeFactor configuration
+# https://docs.codefactor.io/configuration/customization/
+
+# main.js is a generated distribution bundle; source quality is checked in TypeScript.
+exclude:
+	- "main.js"
+	- "node_modules/**"
+	- "coverage/**"

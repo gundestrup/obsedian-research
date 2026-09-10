@@ -1,0 +1,50 @@
+# Semgrep configuration for obsedian-research
+# https://semgrep.dev/docs/
+#
+# Run: semgrep scan --config .semgrep.yml --error src/ main.ts
+
+rules:
+  # Detect use of eval — dangerous dynamic code execution.
+  - id: ts-eval-usage
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "Use of eval() is dangerous — avoid dynamic code execution"
+    pattern: eval($VAR)
+    metadata:
+      owasp: "A03:2021 - Injection"
+      cwe: "CWE-95: Code Injection"
+
+  # Detect RegExp with unanchored polynomial pattern (ReDoS).
+  - id: ts-redos-regex
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: "RegExp with unanchored polynomial pattern may cause ReDoS"
+    pattern: new RegExp($REGEX)
+    metavariable-analysis:
+      analyzer: redos
+      metavariable: $REGEX
+
+  # Detect command injection via child_process exec with variable input.
+  - id: ts-command-injection-exec
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "child_process.exec with variable input — potential command injection"
+    pattern-either:
+      - pattern: child_process.exec($CMD)
+      - pattern: require("child_process").exec($CMD)
+      - pattern: import("child_process").exec($CMD)
+    metadata:
+      owasp: "A03:2021 - Injection"
+      cwe: "CWE-78: OS Command Injection"
+
+  # Detect prototype pollution via assignment to __proto__.
+  - id: ts-prototype-pollution
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "Assignment to __proto__ — potential prototype pollution"
+    pattern-either:
+      - pattern: $OBJ.__proto__ = $VAL
+      - pattern: $OBJ["__proto__"] = $VAL
+      - pattern: $OBJ.constructor.prototype = $VAL
+    metadata:
+      cwe: "CWE-1321: Prototype Pollution"

@@ -38,8 +38,62 @@ var DEFAULT_SETTINGS = {
 };
 
 // src/utils.ts
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function containsIgnoreCase(content, search) {
+  return content.toLowerCase().includes(search.toLowerCase());
+}
+function replaceAnyIgnoreCase(content, searches, replacement) {
+  const lowerContent = content.toLowerCase();
+  const lowerSearches = searches.map((search) => search.toLowerCase());
+  let result = "";
+  let start = 0;
+  while (start < content.length) {
+    let matchIndex = -1;
+    let matchLength = 0;
+    for (let i = 0; i < lowerSearches.length; i++) {
+      const index = lowerContent.indexOf(lowerSearches[i], start);
+      if (index !== -1 && (matchIndex === -1 || index < matchIndex || index === matchIndex && lowerSearches[i].length > matchLength)) {
+        matchIndex = index;
+        matchLength = lowerSearches[i].length;
+      }
+    }
+    if (matchIndex === -1) break;
+    result += content.slice(start, matchIndex) + replacement;
+    start = matchIndex + matchLength;
+  }
+  return result + content.slice(start);
+}
+function hasMarkdownLink(content, linkText, url) {
+  const normalizedUrl = url.endsWith("/") ? url.slice(0, -1) : url;
+  return containsIgnoreCase(content, `[${linkText}](${normalizedUrl})`) || containsIgnoreCase(content, `[${linkText}](${normalizedUrl}/)`);
+}
+function hasMarkedMarkdownLink(content, marker, url) {
+  const lowerContent = content.toLowerCase();
+  const lowerMarker = marker.toLowerCase();
+  const normalizedUrl = url.toLowerCase().replace(/\/$/, "");
+  const linkEnds = [`](${normalizedUrl})`, `](${normalizedUrl}/)`];
+  if (!marker) return linkEnds.some((linkEnd) => lowerContent.includes(linkEnd));
+  let markerIndex = lowerContent.indexOf(lowerMarker);
+  while (markerIndex !== -1) {
+    const lineEnd = lowerContent.indexOf(String.fromCharCode(10), markerIndex);
+    const linkIndex = linkEnds.reduce((firstIndex, linkEnd) => {
+      const index = lowerContent.indexOf(linkEnd, markerIndex);
+      return firstIndex === -1 || index !== -1 && index < firstIndex ? index : firstIndex;
+    }, -1);
+    if (linkIndex !== -1 && (lineEnd === -1 || linkIndex < lineEnd)) return true;
+    if (!marker) return false;
+    markerIndex = lowerContent.indexOf(lowerMarker, markerIndex + lowerMarker.length);
+  }
+  return false;
+}
+function hasCitationWithTitleAndYear(content, title, year) {
+  const lowerTitle = title.toLowerCase();
+  const yearMarker = `- ${year.toLowerCase()}`;
+  return content.toLowerCase().split(String.fromCharCode(10)).some((line) => {
+    const markerIndex = line.indexOf("\u{1F4DA}");
+    if (markerIndex === -1) return false;
+    const titleIndex = line.indexOf(lowerTitle, markerIndex);
+    return titleIndex !== -1 && line.indexOf(yearMarker, titleIndex) !== -1;
+  });
 }
 function isValidDOI(doi) {
   return /^10\.\d+\/.+$/.test(doi);
@@ -76,39 +130,20 @@ function extractDOI(input) {
 }
 function isAlreadyCited(content, pubmedId, doi, pmcId, title, year) {
   if (pubmedId) {
-    const escapedPubmedId = escapeRegex(pubmedId);
-    const pubmedLinkPattern = new RegExp(
-      `\\[${escapedPubmedId}\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`,
-      "i"
-    );
-    if (pubmedLinkPattern.test(content)) return true;
-    const pubmedIdPattern = new RegExp(
-      `\u{1F4DA}.*\\[.*\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`,
-      "i"
-    );
-    if (pubmedIdPattern.test(content)) return true;
+    const pubmedUrl = `https://pubmed.ncbi.nlm.nih.gov/${pubmedId}/`;
+    if (hasMarkdownLink(content, pubmedId, pubmedUrl)) return true;
+    if (hasMarkedMarkdownLink(content, "\u{1F4DA}", pubmedUrl)) return true;
   }
   if (doi) {
-    const cleanDoi = cleanDOI(doi);
-    const escapedDoi = escapeRegex(cleanDoi);
-    const doiLinkPattern = new RegExp(`\\[.*\\]\\(https://doi\\.org/${escapedDoi}\\)`, "i");
-    if (doiLinkPattern.test(content)) return true;
-    const doiPattern = new RegExp(`\u{1F517}.*\\[.*\\]\\(https://doi\\.org/${escapedDoi}\\)`, "i");
-    if (doiPattern.test(content)) return true;
+    const doiUrl = `https://doi.org/${cleanDOI(doi)}`;
+    if (hasMarkedMarkdownLink(content, "", doiUrl)) return true;
+    if (hasMarkedMarkdownLink(content, "\u{1F517}", doiUrl)) return true;
   }
   if (pmcId) {
-    const escapedPmcId = escapeRegex(pmcId);
-    const pmcLinkPattern = new RegExp(
-      `\\[\u{1F4C4}\\]\\(https://pmc\\.ncbi\\.nlm\\.nih\\.gov/articles/${escapedPmcId}/?\\)`,
-      "i"
-    );
-    if (pmcLinkPattern.test(content)) return true;
+    const pmcUrl = `https://pmc.ncbi.nlm.nih.gov/articles/${pmcId}/`;
+    if (hasMarkdownLink(content, "\u{1F4C4}", pmcUrl)) return true;
   }
-  if (title && year) {
-    const escapedTitle = escapeRegex(title);
-    const titleYearPattern = new RegExp(`\u{1F4DA}.*${escapedTitle}.*- ${year}.*`, "i");
-    if (titleYearPattern.test(content)) return true;
-  }
+  if (title && year && hasCitationWithTitleAndYear(content, title, year)) return true;
   return false;
 }
 function formatCitation(info) {
@@ -156,39 +191,39 @@ function extractUniqueIds(content) {
   return { pubmedIds, pmcIds, dois };
 }
 function isPubMedIdCited(content, pubmedId) {
-  const escaped = escapeRegex(pubmedId);
-  const pattern = new RegExp(
-    `\\[.*\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escaped}/?\\)`,
-    "i"
-  );
-  return pattern.test(content);
+  return hasMarkedMarkdownLink(content, "", `https://pubmed.ncbi.nlm.nih.gov/${pubmedId}/`);
 }
 function isPMCIdCited(content, pmcId) {
-  const escaped = escapeRegex(pmcId);
-  const pattern = new RegExp(
-    `\\[\u{1F4C4}\\]\\(https://pmc\\.ncbi\\.nlm\\.nih\\.gov/articles/${escaped}/?\\)`,
-    "i"
-  );
-  return pattern.test(content);
+  return hasMarkdownLink(content, "\u{1F4C4}", `https://pmc.ncbi.nlm.nih.gov/articles/${pmcId}/`);
 }
 function isDOICited(content, doi) {
-  const escaped = escapeRegex(doi);
-  const pattern = new RegExp(`\\[.*\\]\\(https://doi\\.org/${escaped}\\)`, "i");
-  return pattern.test(content);
+  return hasMarkedMarkdownLink(content, "", `https://doi.org/${doi}`);
 }
 function replacePubMedUrl(content, pubmedId, citation) {
-  const pattern = new RegExp(`https?://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${pubmedId}/?`, "gi");
-  return content.replace(pattern, citation);
+  const baseUrl = `pubmed.ncbi.nlm.nih.gov/${pubmedId}`;
+  return replaceAnyIgnoreCase(
+    content,
+    [`https://${baseUrl}/`, `https://${baseUrl}`, `http://${baseUrl}/`, `http://${baseUrl}`],
+    citation
+  );
 }
 function replacePMCUrl(content, pmcId, citation) {
-  const escaped = escapeRegex(pmcId);
-  const pattern = new RegExp(`https?://pmc\\.ncbi\\.nlm\\.nih\\.gov/(?:articles/)?${escaped}/?`, "gi");
-  return content.replace(pattern, citation);
+  const baseUrl = "pmc.ncbi.nlm.nih.gov";
+  const paths = [`/articles/${pmcId}`, `/${pmcId}`];
+  const urls = [];
+  for (const path of paths) {
+    urls.push(
+      `https://${baseUrl}${path}/`,
+      `https://${baseUrl}${path}`,
+      `http://${baseUrl}${path}/`,
+      `http://${baseUrl}${path}`
+    );
+  }
+  return replaceAnyIgnoreCase(content, urls, citation);
 }
 function replaceDOIUrl(content, doi, citation) {
-  const escaped = escapeRegex(doi);
-  const pattern = new RegExp(`https?://(?:dx\\.)?doi\\.org/${escaped}`, "gi");
-  return content.replace(pattern, citation);
+  const doiPath = `/${doi}`;
+  return replaceAnyIgnoreCase(content, [`https://dx.doi.org${doiPath}`, `https://doi.org${doiPath}`], citation);
 }
 
 // src/api.ts
@@ -512,12 +547,12 @@ var PubMedFetcherPlugin = class extends import_obsidian3.Plugin {
     await this.saveData(this.settings);
   }
   handleError(error, context) {
-    console.error(`Error in ${context}:`, error);
+    console.error("Error in", context, error);
     const message = error instanceof Error ? error.message : "Unknown error occurred";
     new import_obsidian3.Notice(`Error fetching article: ${message}`);
   }
   async delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
   }
   async fetchArticle(input) {
     const trimmedInput = input.trim();
@@ -700,7 +735,7 @@ var PubMedFetcherPlugin = class extends import_obsidian3.Plugin {
         }
         await this.delay(350);
       } catch (error) {
-        console.error(`Error processing PubMed ID ${pubmedId}:`, error);
+        console.error("Error processing PubMed ID", pubmedId, error);
       }
     }
     for (const pmcId of pmcIds) {
@@ -723,7 +758,7 @@ var PubMedFetcherPlugin = class extends import_obsidian3.Plugin {
           }
         }
       } catch (error) {
-        console.error(`Error processing PMC ID ${pmcId}:`, error);
+        console.error("Error processing PMC ID", pmcId, error);
       }
     }
     for (const doi of dois) {
@@ -739,7 +774,7 @@ var PubMedFetcherPlugin = class extends import_obsidian3.Plugin {
         }
         await this.delay(350);
       } catch (error) {
-        console.error(`Error processing DOI ${doi}:`, error);
+        console.error("Error processing DOI", doi, error);
       }
     }
     if (processedCount > 0) {
@@ -785,7 +820,7 @@ var PubMedFetcherPlugin = class extends import_obsidian3.Plugin {
             }
             await this.delay(350);
           } catch (error) {
-            console.error(`Error processing PubMed ID ${pubmedId} in ${file.path}:`, error);
+            console.error("Error processing PubMed ID in file", pubmedId, file.path, error);
           }
         }
         for (const pmcId of pmcIds) {
@@ -808,7 +843,7 @@ var PubMedFetcherPlugin = class extends import_obsidian3.Plugin {
               }
             }
           } catch (error) {
-            console.error(`Error processing PMC ID ${pmcId} in ${file.path}:`, error);
+            console.error("Error processing PMC ID in file", pmcId, file.path, error);
           }
         }
         for (const doi of dois) {
@@ -824,14 +859,14 @@ var PubMedFetcherPlugin = class extends import_obsidian3.Plugin {
             }
             await this.delay(350);
           } catch (error) {
-            console.error(`Error processing DOI ${doi} in ${file.path}:`, error);
+            console.error("Error processing DOI in file", doi, file.path, error);
           }
         }
         if (modifiedContent !== content) {
           await this.app.vault.modify(file, modifiedContent);
         }
       } catch (error) {
-        console.error(`Error processing file ${file.path}:`, error);
+        console.error("Error processing file", file.path, error);
       }
     }
     new import_obsidian3.Notice(`Global update complete: Processed ${totalProcessed} of ${totalLinksFound} links across ${filesProcessed} notes`);

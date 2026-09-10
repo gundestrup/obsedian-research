@@ -4,6 +4,79 @@ export function escapeRegex(str: string): string {
 	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function containsIgnoreCase(content: string, search: string): boolean {
+	return content.toLowerCase().includes(search.toLowerCase());
+}
+
+function replaceAnyIgnoreCase(content: string, searches: string[], replacement: string): string {
+	const lowerContent = content.toLowerCase();
+	const lowerSearches = searches.map((search) => search.toLowerCase());
+	let result = '';
+	let start = 0;
+
+	while (start < content.length) {
+		let matchIndex = -1;
+		let matchLength = 0;
+
+		for (let i = 0; i < lowerSearches.length; i++) {
+			const index = lowerContent.indexOf(lowerSearches[i], start);
+			if (index !== -1 && (matchIndex === -1 || index < matchIndex || (index === matchIndex && lowerSearches[i].length > matchLength))) {
+				matchIndex = index;
+				matchLength = lowerSearches[i].length;
+			}
+		}
+
+		if (matchIndex === -1) break;
+		result += content.slice(start, matchIndex) + replacement;
+		start = matchIndex + matchLength;
+	}
+
+	return result + content.slice(start);
+}
+
+function hasMarkdownLink(content: string, linkText: string, url: string): boolean {
+	const normalizedUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+	return (
+		containsIgnoreCase(content, `[${linkText}](${normalizedUrl})`) ||
+		containsIgnoreCase(content, `[${linkText}](${normalizedUrl}/)`)
+	);
+}
+
+function hasMarkedMarkdownLink(content: string, marker: string, url: string): boolean {
+	const lowerContent = content.toLowerCase();
+	const lowerMarker = marker.toLowerCase();
+	const normalizedUrl = url.toLowerCase().replace(/\/$/, '');
+	const linkEnds = [`](${normalizedUrl})`, `](${normalizedUrl}/)`];
+	if (!marker) return linkEnds.some((linkEnd) => lowerContent.includes(linkEnd));
+
+	let markerIndex = lowerContent.indexOf(lowerMarker);
+
+	while (markerIndex !== -1) {
+		const lineEnd = lowerContent.indexOf(String.fromCharCode(10), markerIndex);
+		const linkIndex = linkEnds.reduce((firstIndex, linkEnd) => {
+			const index = lowerContent.indexOf(linkEnd, markerIndex);
+			return firstIndex === -1 || (index !== -1 && index < firstIndex) ? index : firstIndex;
+		}, -1);
+		if (linkIndex !== -1 && (lineEnd === -1 || linkIndex < lineEnd)) return true;
+		if (!marker) return false;
+		markerIndex = lowerContent.indexOf(lowerMarker, markerIndex + lowerMarker.length);
+	}
+
+	return false;
+}
+
+function hasCitationWithTitleAndYear(content: string, title: string, year: string): boolean {
+	const lowerTitle = title.toLowerCase();
+	const yearMarker = `- ${year.toLowerCase()}`;
+
+	return content.toLowerCase().split(String.fromCharCode(10)).some((line) => {
+		const markerIndex = line.indexOf('📚');
+		if (markerIndex === -1) return false;
+		const titleIndex = line.indexOf(lowerTitle, markerIndex);
+		return titleIndex !== -1 && line.indexOf(yearMarker, titleIndex) !== -1;
+	});
+}
+
 export function isValidDOI(doi: string): boolean {
 	return /^10\.\d+\/.+$/.test(doi);
 }
@@ -58,44 +131,23 @@ export function isAlreadyCited(
 	year?: string
 ): boolean {
 	if (pubmedId) {
-		const escapedPubmedId = escapeRegex(pubmedId);
-		const pubmedLinkPattern = new RegExp(
-			`\\[${escapedPubmedId}\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`,
-			'i'
-		);
-		if (pubmedLinkPattern.test(content)) return true;
-
-		const pubmedIdPattern = new RegExp(
-			`📚.*\\[.*\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escapedPubmedId}/?\\)`,
-			'i'
-		);
-		if (pubmedIdPattern.test(content)) return true;
+		const pubmedUrl = `https://pubmed.ncbi.nlm.nih.gov/${pubmedId}/`;
+		if (hasMarkdownLink(content, pubmedId, pubmedUrl)) return true;
+		if (hasMarkedMarkdownLink(content, '📚', pubmedUrl)) return true;
 	}
 
 	if (doi) {
-		const cleanDoi = cleanDOI(doi);
-		const escapedDoi = escapeRegex(cleanDoi);
-		const doiLinkPattern = new RegExp(`\\[.*\\]\\(https://doi\\.org/${escapedDoi}\\)`, 'i');
-		if (doiLinkPattern.test(content)) return true;
-
-		const doiPattern = new RegExp(`🔗.*\\[.*\\]\\(https://doi\\.org/${escapedDoi}\\)`, 'i');
-		if (doiPattern.test(content)) return true;
+		const doiUrl = `https://doi.org/${cleanDOI(doi)}`;
+		if (hasMarkedMarkdownLink(content, '', doiUrl)) return true;
+		if (hasMarkedMarkdownLink(content, '🔗', doiUrl)) return true;
 	}
 
 	if (pmcId) {
-		const escapedPmcId = escapeRegex(pmcId);
-		const pmcLinkPattern = new RegExp(
-			`\\[📄\\]\\(https://pmc\\.ncbi\\.nlm\\.nih\\.gov/articles/${escapedPmcId}/?\\)`,
-			'i'
-		);
-		if (pmcLinkPattern.test(content)) return true;
+		const pmcUrl = `https://pmc.ncbi.nlm.nih.gov/articles/${pmcId}/`;
+		if (hasMarkdownLink(content, '📄', pmcUrl)) return true;
 	}
 
-	if (title && year) {
-		const escapedTitle = escapeRegex(title);
-		const titleYearPattern = new RegExp(`📚.*${escapedTitle}.*- ${year}.*`, 'i');
-		if (titleYearPattern.test(content)) return true;
-	}
+	if (title && year && hasCitationWithTitleAndYear(content, title, year)) return true;
 
 	return false;
 }
@@ -164,42 +216,42 @@ export function extractUniqueIds(content: string): {
 }
 
 export function isPubMedIdCited(content: string, pubmedId: string): boolean {
-	const escaped = escapeRegex(pubmedId);
-	const pattern = new RegExp(
-		`\\[.*\\]\\(https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${escaped}/?\\)`,
-		'i'
-	);
-	return pattern.test(content);
+	return hasMarkedMarkdownLink(content, '', `https://pubmed.ncbi.nlm.nih.gov/${pubmedId}/`);
 }
 
 export function isPMCIdCited(content: string, pmcId: string): boolean {
-	const escaped = escapeRegex(pmcId);
-	const pattern = new RegExp(
-		`\\[📄\\]\\(https://pmc\\.ncbi\\.nlm\\.nih\\.gov/articles/${escaped}/?\\)`,
-		'i'
-	);
-	return pattern.test(content);
+	return hasMarkdownLink(content, '📄', `https://pmc.ncbi.nlm.nih.gov/articles/${pmcId}/`);
 }
 
 export function isDOICited(content: string, doi: string): boolean {
-	const escaped = escapeRegex(doi);
-	const pattern = new RegExp(`\\[.*\\]\\(https://doi\\.org/${escaped}\\)`, 'i');
-	return pattern.test(content);
+	return hasMarkedMarkdownLink(content, '', `https://doi.org/${doi}`);
 }
 
 export function replacePubMedUrl(content: string, pubmedId: string, citation: string): string {
-	const pattern = new RegExp(`https?://pubmed\\.ncbi\\.nlm\\.nih\\.gov/${pubmedId}/?`, 'gi');
-	return content.replace(pattern, citation);
+	const baseUrl = `pubmed.ncbi.nlm.nih.gov/${pubmedId}`;
+	return replaceAnyIgnoreCase(
+		content,
+		[`https://${baseUrl}/`, `https://${baseUrl}`, `http://${baseUrl}/`, `http://${baseUrl}`],
+		citation
+	);
 }
 
 export function replacePMCUrl(content: string, pmcId: string, citation: string): string {
-	const escaped = escapeRegex(pmcId);
-	const pattern = new RegExp(`https?://pmc\\.ncbi\\.nlm\\.nih\\.gov/(?:articles/)?${escaped}/?`, 'gi');
-	return content.replace(pattern, citation);
+	const baseUrl = 'pmc.ncbi.nlm.nih.gov';
+	const paths = [`/articles/${pmcId}`, `/${pmcId}`];
+	const urls: string[] = [];
+	for (const path of paths) {
+		urls.push(
+			`https://${baseUrl}${path}/`,
+			`https://${baseUrl}${path}`,
+			`http://${baseUrl}${path}/`,
+			`http://${baseUrl}${path}`
+		);
+	}
+	return replaceAnyIgnoreCase(content, urls, citation);
 }
 
 export function replaceDOIUrl(content: string, doi: string, citation: string): string {
-	const escaped = escapeRegex(doi);
-	const pattern = new RegExp(`https?://(?:dx\\.)?doi\\.org/${escaped}`, 'gi');
-	return content.replace(pattern, citation);
+	const doiPath = `/${doi}`;
+	return replaceAnyIgnoreCase(content, [`https://dx.doi.org${doiPath}`, `https://doi.org${doiPath}`], citation);
 }
