@@ -45,5 +45,10 @@ jobs:
       - name: Install Semgrep
         run: pip3 install semgrep
 
-      - name: Run Semgrep security scan
+      - name: Run Semgrep dashboard scan
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        run: semgrep ci --code
+
+      - name: Run local Semgrep rules
         run: semgrep scan --config .semgrep.yml --error --exclude main.js --exclude node_modules .
