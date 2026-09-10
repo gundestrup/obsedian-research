@@ -30,7 +30,7 @@ jobs:
         run: npm run build
 
       - name: Attest release artifacts
-        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
           subject-path: |
             main.js
@@ -38,7 +38,7 @@ jobs:
             styles.css
 
       - name: Create release and upload assets
-        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64
         with:
           files: |
             main.js

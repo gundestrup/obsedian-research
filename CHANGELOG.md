@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Updated release actions to Node.js 24-compatible versions to remove deprecated Node.js 20 action runtimes.
+
 ## [1.4.2] - 2026-09-10
 
 ### Changed
