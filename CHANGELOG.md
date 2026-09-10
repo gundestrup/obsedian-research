@@ -2,22 +2,24 @@
 
 ## [Unreleased]
 
-### Changed
-- **AI_INSTRUCTIONS.md → AGENTS.md**: Renamed to follow the agents.md open convention. AGENTS.md is now the single source of truth for all coding agents. `CLAUDE.md`, `DEVIN.md`, and `WINDSURF.md` updated to point to `AGENTS.md`.
-
 ## [1.4.1] - 2026-09-10
 
 ### Added
 - Added Semgrep Pro security scanning configuration and CI integration.
 - Added CodeFactor configuration and README status badges.
+- Added weekly Dependabot updates with a seven-day cooldown.
+- Added build provenance attestations for release artifacts.
 
 ### Changed
+- **AI_INSTRUCTIONS.md → AGENTS.md**: Renamed to follow the agents.md open convention. AGENTS.md is now the single source of truth for all coding agents. `CLAUDE.md`, `DEVIN.md`, and `WINDSURF.md` updated to point to `AGENTS.md`.
 - Pinned GitHub Actions to immutable commit SHAs for supply-chain security.
+- Pinned TypeScript to 5.9.3 for reproducible builds.
 - Updated semver-compatible development dependencies and refreshed the lockfile.
 - Replaced dynamic regular expressions and logging format strings with safer implementations.
 
 ### Fixed
 - Resolved all findings from the local Semgrep Pro scan.
+- Resolved CodeQL findings for version escaping and DOI parsing.
 - Updated TypeScript configuration for modern module resolution and Obsidian-compatible timer usage.
 
 ## [1.4.0] - 2026-07-24
