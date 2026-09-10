@@ -309,97 +309,106 @@ export default class PubMedFetcherPlugin extends Plugin {
 		}
 	}
 
-	async fetchAllArticlesInNote(editor: Editor) {
-		let content = editor.getValue();
-		const { pubmedIds, pmcIds, dois } = extractUniqueIds(content);
+	private logArticleProcessingError(kind: string, id: string, error: unknown, location?: string): void {
+		if (location) {
+			console.error('Error processing article in file', kind, id, location, error);
+			return;
+		}
+		console.error('Error processing article', kind, id, error);
+	}
 
-		const totalLinks = pubmedIds.length + pmcIds.length + dois.length;
+	private async processPubMedLink(content: string, pubmedId: string, location?: string): Promise<{ content: string; processed: boolean }> {
+		try {
+			if (isPubMedIdCited(content, pubmedId)) return { content, processed: false };
+
+			const info = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
+			if (info && !isAlreadyCited(content, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+				return { content: replacePubMedUrl(content, pubmedId, formatCitation(info)), processed: true };
+			}
+			await this.delay(350);
+		} catch (error) {
+			this.logArticleProcessingError('PubMed ID', pubmedId, error, location);
+		}
+		return { content, processed: false };
+	}
+
+	private async processPMCLink(content: string, pmcId: string, location?: string): Promise<{ content: string; processed: boolean }> {
+		try {
+			if (isPMCIdCited(content, pmcId)) return { content, processed: false };
+
+			const pubmedId = await findPubMedIdFromPMC(pmcId, this.apiKey, this.requestFn);
+			await this.delay(350);
+			if (pubmedId) {
+				const info = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
+				await this.delay(350);
+				if (info) {
+					const articleInfo = { ...info, pmcId };
+					if (!isAlreadyCited(content, articleInfo.pubmedId, articleInfo.doi, articleInfo.pmcId, articleInfo.title, articleInfo.year)) {
+						return { content: replacePMCUrl(content, pmcId, formatCitation(articleInfo)), processed: true };
+					}
+				}
+			}
+		} catch (error) {
+			this.logArticleProcessingError('PMC ID', pmcId, error, location);
+		}
+		return { content, processed: false };
+	}
+
+	private async processDOILink(content: string, doi: string, location?: string): Promise<{ content: string; processed: boolean }> {
+		try {
+			if (isDOICited(content, doi)) return { content, processed: false };
+
+			const info = await fetchDOIApiData(doi, this.settings.articleType || 'Article', this.requestFn);
+			if (!isAlreadyCited(content, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
+				return { content: replaceDOIUrl(content, doi, formatCitation(info)), processed: true };
+			}
+			await this.delay(350);
+		} catch (error) {
+			this.logArticleProcessingError('DOI', doi, error, location);
+		}
+		return { content, processed: false };
+	}
+
+	private async processArticleLinks(content: string, ids: ReturnType<typeof extractUniqueIds>, location?: string): Promise<{ content: string; processedCount: number }> {
+		let processedCount = 0;
+		let updatedContent = content;
+		for (const pubmedId of ids.pubmedIds) {
+			const result = await this.processPubMedLink(updatedContent, pubmedId, location);
+			updatedContent = result.content;
+			if (result.processed) processedCount++;
+		}
+		for (const pmcId of ids.pmcIds) {
+			const result = await this.processPMCLink(updatedContent, pmcId, location);
+			updatedContent = result.content;
+			if (result.processed) processedCount++;
+		}
+		for (const doi of ids.dois) {
+			const result = await this.processDOILink(updatedContent, doi, location);
+			updatedContent = result.content;
+			if (result.processed) processedCount++;
+		}
+		return { content: updatedContent, processedCount };
+	}
+
+	async fetchAllArticlesInNote(editor: Editor) {
+		const content = editor.getValue();
+		const ids = extractUniqueIds(content);
+		const totalLinks = ids.pubmedIds.length + ids.pmcIds.length + ids.dois.length;
 
 		if (totalLinks === 0) {
-				new Notice('No PubMed IDs, PMC IDs, or DOIs found in this note');
+			new Notice('No PubMed IDs, PMC IDs, or DOIs found in this note');
 			return;
 		}
 
 		new Notice(`Found ${totalLinks} links to process in current note`);
-
-		let processedCount = 0;
-
-		for (const pubmedId of pubmedIds) {
-			try {
-				if (isPubMedIdCited(content, pubmedId)) {
-					continue;
-				}
-
-				const info = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
-				if (info && !isAlreadyCited(content, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
-					const citation = formatCitation(info);
-					content = replacePubMedUrl(content, pubmedId, citation);
-					processedCount++;
-				}
-				await this.delay(350);
-			} catch (error) {
-				console.error('Error processing PubMed ID', pubmedId, error);
-			}
-		}
-
-		for (const pmcId of pmcIds) {
-			try {
-				if (isPMCIdCited(content, pmcId)) {
-					continue;
-				}
-
-				const pubmedId = await findPubMedIdFromPMC(pmcId, this.apiKey, this.requestFn);
-				await this.delay(350);
-
-				if (pubmedId) {
-					const info = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
-					await this.delay(350);
-
-					if (info) {
-						const articleInfo = { ...info, pmcId };
-						if (!isAlreadyCited(content, articleInfo.pubmedId, articleInfo.doi, articleInfo.pmcId, articleInfo.title, articleInfo.year)) {
-							const citation = formatCitation(articleInfo);
-							content = replacePMCUrl(content, pmcId, citation);
-							processedCount++;
-						}
-					}
-				}
-			} catch (error) {
-				console.error('Error processing PMC ID', pmcId, error);
-			}
-		}
-
-		for (const doi of dois) {
-			try {
-				if (isDOICited(content, doi)) {
-					continue;
-				}
-
-				const info = await fetchDOIApiData(doi, this.settings.articleType || 'Article', this.requestFn);
-				if (!isAlreadyCited(content, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
-					const citation = formatCitation(info);
-					content = replaceDOIUrl(content, doi, citation);
-					processedCount++;
-				}
-				await this.delay(350);
-			} catch (error) {
-				console.error('Error processing DOI', doi, error);
-			}
-		}
-
-		if (processedCount > 0) {
-			editor.setValue(content);
-		}
-
-		new Notice(`Successfully processed ${processedCount} of ${totalLinks} links in current note`);
+		const result = await this.processArticleLinks(content, ids);
+		if (result.processedCount > 0) editor.setValue(result.content);
+		new Notice(`Successfully processed ${result.processedCount} of ${totalLinks} links in current note`);
 	}
 
 	async fetchAllArticlesInVault(selectedFolder?: string) {
 		let files = this.app.vault.getMarkdownFiles();
-
-		if (selectedFolder && selectedFolder !== '/') {
-			files = files.filter(file => file.path.startsWith(selectedFolder));
-		}
+		if (selectedFolder && selectedFolder !== '/') files = files.filter(file => file.path.startsWith(selectedFolder));
 
 		if (files.length === 0) {
 			new Notice(`No markdown files found${selectedFolder ? ` in folder: ${selectedFolder}` : ' in vault'}`);
@@ -408,7 +417,6 @@ export default class PubMedFetcherPlugin extends Plugin {
 
 		const folderInfo = selectedFolder && selectedFolder !== '/' ? ` in folder: ${selectedFolder}` : ' in vault';
 		new Notice(`Scanning ${files.length} notes${folderInfo} for PubMed/PMC/DOI links...`);
-
 		let totalLinksFound = 0;
 		let totalProcessed = 0;
 		let filesProcessed = 0;
@@ -416,86 +424,15 @@ export default class PubMedFetcherPlugin extends Plugin {
 		for (const file of files) {
 			try {
 				const content = await this.app.vault.read(file);
-				const { pubmedIds, pmcIds, dois } = extractUniqueIds(content);
-
-				const linksInFile = pubmedIds.length + pmcIds.length + dois.length;
-
-				if (linksInFile === 0) {
-					continue;
-				}
+				const ids = extractUniqueIds(content);
+				const linksInFile = ids.pubmedIds.length + ids.pmcIds.length + ids.dois.length;
+				if (linksInFile === 0) continue;
 
 				totalLinksFound += linksInFile;
 				filesProcessed++;
-
-				let modifiedContent = content;
-
-				for (const pubmedId of pubmedIds) {
-					try {
-						if (isPubMedIdCited(modifiedContent, pubmedId)) {
-							continue;
-						}
-
-						const info = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
-						if (info && !isAlreadyCited(modifiedContent, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
-							const citation = formatCitation(info);
-							modifiedContent = replacePubMedUrl(modifiedContent, pubmedId, citation);
-							totalProcessed++;
-						}
-						await this.delay(350);
-					} catch (error) {
-						console.error('Error processing PubMed ID in file', pubmedId, file.path, error);
-					}
-				}
-
-				for (const pmcId of pmcIds) {
-					try {
-						if (isPMCIdCited(modifiedContent, pmcId)) {
-							continue;
-						}
-
-						const pubmedId = await findPubMedIdFromPMC(pmcId, this.apiKey, this.requestFn);
-						await this.delay(350);
-
-						if (pubmedId) {
-							const info = await fetchPubMedApiData(pubmedId, this.apiKey, this.requestFn);
-							await this.delay(350);
-
-							if (info) {
-								const articleInfo = { ...info, pmcId };
-								if (!isAlreadyCited(modifiedContent, articleInfo.pubmedId, articleInfo.doi, articleInfo.pmcId, articleInfo.title, articleInfo.year)) {
-									const citation = formatCitation(articleInfo);
-									modifiedContent = replacePMCUrl(modifiedContent, pmcId, citation);
-									totalProcessed++;
-								}
-							}
-						}
-					} catch (error) {
-						console.error('Error processing PMC ID in file', pmcId, file.path, error);
-					}
-				}
-
-				for (const doi of dois) {
-					try {
-						if (isDOICited(modifiedContent, doi)) {
-							continue;
-						}
-
-						const info = await fetchDOIApiData(doi, this.settings.articleType || 'Article', this.requestFn);
-						if (!isAlreadyCited(modifiedContent, info.pubmedId, info.doi, info.pmcId, info.title, info.year)) {
-							const citation = formatCitation(info);
-							modifiedContent = replaceDOIUrl(modifiedContent, doi, citation);
-							totalProcessed++;
-						}
-						await this.delay(350);
-					} catch (error) {
-						console.error('Error processing DOI in file', doi, file.path, error);
-					}
-				}
-
-				if (modifiedContent !== content) {
-					await this.app.vault.modify(file, modifiedContent);
-				}
-
+				const result = await this.processArticleLinks(content, ids, file.path);
+				totalProcessed += result.processedCount;
+				if (result.content !== content) await this.app.vault.modify(file, result.content);
 			} catch (error) {
 				console.error('Error processing file', file.path, error);
 			}

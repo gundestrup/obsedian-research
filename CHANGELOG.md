@@ -2,8 +2,12 @@
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-10
+
 ### Changed
 - Updated CI and release workflows to Node.js 24 and Node 24-compatible GitHub Actions.
+- Split Semgrep CI dashboard scanning from the local custom-rule scan.
+- Refactored note and vault batch processing into focused article-link helpers.
 
 ## [1.4.1] - 2026-09-10
 
