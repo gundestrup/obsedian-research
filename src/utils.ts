@@ -108,13 +108,22 @@ export function extractPMCId(input: string): string | null {
 }
 
 export function extractDOI(input: string): string | null {
-	const doiUrlMatch = input.match(/doi\.org\/(10\.\d+\/.+?)(?:[#?]|[\s\])]|$)/i);
-	if (doiUrlMatch) {
-		let doi = doiUrlMatch[1];
+	const lowerInput = input.toLowerCase();
+	const marker = 'doi.org/';
+	const markerIndex = lowerInput.indexOf(marker);
+
+	if (markerIndex !== -1) {
+		const doiStart = markerIndex + marker.length;
+		const terminators = ['#', '?', ' ', String.fromCharCode(9), String.fromCharCode(10), ']', ')'];
+		const endIndex = terminators.reduce((end, terminator) => {
+			const index = input.indexOf(terminator, doiStart);
+			return index !== -1 && index < end ? index : end;
+		}, input.length);
+		let doi = input.slice(doiStart, endIndex);
 		if (doi.endsWith(')') || doi.endsWith('.')) {
 			doi = doi.slice(0, -1);
 		}
-		return doi;
+		if (isValidDOI(doi)) return doi;
 	}
 
 	if (isValidDOI(input)) return input;

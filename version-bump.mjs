@@ -94,10 +94,9 @@ if (isPreversion) {
     
     // Validate that changelog has this exact version
     const changelog = readFileSync("CHANGELOG.md", "utf8");
-    const escapedVersion = targetVersion.replace(/\./g, "\\.");
-    const versionPattern = new RegExp(`## \\[${escapedVersion}\\]`, "i");
+    const versionPattern = `## [${targetVersion}]`;
     
-    if (!versionPattern.test(changelog)) {
+    if (!changelog.toLowerCase().includes(versionPattern.toLowerCase())) {
         console.error(`\n❌ ERROR: Changelog entry for v${targetVersion} not found!`);
         console.error(`The version was bumped to ${targetVersion} but changelog doesn't have this exact version.`);
         console.error(`\nPlease update CHANGELOG.md to include:`);
