@@ -24,7 +24,10 @@ jobs:
           node-version: '24'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
+
+      - name: Install trusted esbuild binary
+        run: npm rebuild esbuild
 
       - name: Build plugin
         run: npm run build

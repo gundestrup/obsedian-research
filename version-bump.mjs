@@ -1,7 +1,16 @@
 import { readFileSync, writeFileSync } from "fs";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
+import { delimiter } from "path";
 
 console.log("🚀 Starting release preparation...");
+
+const safeEnv = {
+    ...process.env,
+    PATH: ["/usr/local/bin", "/usr/bin", "/bin"].join(delimiter),
+};
+const npmArgs = (args) => process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args;
+const runNpm = (args) => execFileSync(process.env.npm_execpath ? process.execPath : "npm", npmArgs(args), { stdio: "inherit", env: safeEnv });
+const runGit = (args) => execFileSync("git", args, { stdio: "inherit", env: safeEnv });
 
 // Check if this is preversion or version script
 const isPreversion = process.argv.includes("--preversion");
@@ -64,15 +73,15 @@ if (isPreversion) {
     console.log("\n📋 Running quality checks...");
     try {
         console.log("  🔍 Running lint...");
-        execSync("npm run lint", { stdio: "inherit" });
+        runNpm(["run", "lint"]);
         console.log("  ✅ Lint passed");
         
         console.log("  🧪 Running unit tests...");
-        execSync("npm test", { stdio: "inherit" });
+        runNpm(["test"]);
         console.log("  ✅ Unit tests passed");
         
         console.log("  🔨 Building plugin...");
-        execSync("npm run build", { stdio: "inherit" });
+        runNpm(["run", "build"]);
         console.log("  ✅ Build successful");
     } catch (error) {
         console.error("\n❌ ERROR: Quality checks failed!");
@@ -117,7 +126,7 @@ if (isPreversion) {
     console.log(`  ✅ Updated versions.json with v${targetVersion}`);
     
     // Stage the updated files
-    execSync("git add manifest.json versions.json", { stdio: "inherit" });
+    runGit(["add", "manifest.json", "versions.json"]);
     
     console.log(`\n🎉 Version v${targetVersion} updated successfully!`);
 }

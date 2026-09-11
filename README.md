@@ -5,6 +5,7 @@ Fetch article metadata from PubMed, PMC, and DOI links automatically.
 [![CI](https://github.com/gundestrup/obsedian-research/actions/workflows/ci.yml/badge.svg)](https://github.com/gundestrup/obsedian-research/actions/workflows/ci.yml)
 [![Semgrep](https://img.shields.io/badge/Semgrep-security%20scan-2c7a4b?logo=semgrep&logoColor=white)](https://semgrep.dev/)
 [![CodeFactor](https://www.codefactor.io/repository/github/gundestrup/obsedian-research/badge)](https://www.codefactor.io/repository/github/gundestrup/obsedian-research)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=gundestrup_obsedian-research&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gundestrup_obsedian-research)
 [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/obsedian-research)
 
 ## Features
