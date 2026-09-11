@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.4.5] - 2026-09-11
+
+### Fixed
+- Documented the fixed release-script PATH as an intentional SonarQube S4036 suppression.
+
 ## [1.4.4] - 2026-09-11
 
 ### Fixed

@@ -4,7 +4,7 @@ console.log("🚀 Starting release preparation...");
 
 const safeEnv = {
     ...process.env,
-    PATH: process.platform === "win32" ? "C:\\Windows\\System32;C:\\Windows" : "/usr/local/bin:/usr/bin:/bin",
+    PATH: process.platform === "win32" ? "C:\\Windows\\System32;C:\\Windows" : "/usr/local/bin:/usr/bin:/bin", // NOSONAR: fixed, non-writable system directories
 };
 const npmArgs = (args) => process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args;
 const runNpm = (args) => execFileSync(process.env.npm_execpath ? process.execPath : "npm", npmArgs(args), { stdio: "inherit", env: safeEnv });
