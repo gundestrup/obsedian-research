@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-09-11
+
+### Fixed
+- Restricted the release script PATH to fixed system directories to clear the remaining SonarQube S4036 finding.
+
 ## [1.4.3] - 2026-09-11
 
 ### Added

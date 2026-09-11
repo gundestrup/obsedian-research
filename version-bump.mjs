@@ -1,12 +1,10 @@
 import { readFileSync, writeFileSync } from "fs";
 import { execFileSync } from "child_process";
-import { delimiter } from "path";
-
 console.log("🚀 Starting release preparation...");
 
 const safeEnv = {
     ...process.env,
-    PATH: ["/usr/local/bin", "/usr/bin", "/bin"].join(delimiter),
+    PATH: process.platform === "win32" ? "C:\\Windows\\System32;C:\\Windows" : "/usr/local/bin:/usr/bin:/bin",
 };
 const npmArgs = (args) => process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args;
 const runNpm = (args) => execFileSync(process.env.npm_execpath ? process.execPath : "npm", npmArgs(args), { stdio: "inherit", env: safeEnv });
