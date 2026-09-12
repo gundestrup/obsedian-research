@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.4.6] - 2026-09-11
+
+### Fixed
+- Resolved the remaining SonarQube PATH-resolution finding for Git invocation in the release script.
+
 ## [1.4.5] - 2026-09-11
 
 ### Fixed

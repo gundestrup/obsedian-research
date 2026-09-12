@@ -8,7 +8,8 @@ const safeEnv = {
 };
 const npmArgs = (args) => process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args;
 const runNpm = (args) => execFileSync(process.env.npm_execpath ? process.execPath : "npm", npmArgs(args), { stdio: "inherit", env: safeEnv });
-const runGit = (args) => execFileSync("git", args, { stdio: "inherit", env: safeEnv });
+const gitExecutable = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\git.exe" : "/usr/bin/git";
+const runGit = (args) => execFileSync(gitExecutable, args, { stdio: "inherit", env: safeEnv });
 
 // Check if this is preversion or version script
 const isPreversion = process.argv.includes("--preversion");
