@@ -13,9 +13,11 @@
 - Scoped Vitest coverage to unit-testable modules, excluding the Obsidian-bound `main.ts`, `src/modals.ts`, and `src/settings.ts`.
 - Run `npm run test:coverage` in CI so the 80 percent coverage thresholds are enforced.
 - Updated TypeScript from 5.9.3 to 6.0.3.
+- Reached 100 percent statement, branch, function, and line coverage on unit-testable modules.
 
 ### Removed
 - Removed the unused `escapeRegex` helper.
+- Removed unreachable branches in citation-link detection: a dead marker guard in `hasMarkedMarkdownLink` and the redundant `🔗` DOI-link check subsumed by the unmarked scan.
 
 ## [1.4.6] - 2026-09-11
 

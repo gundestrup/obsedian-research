@@ -31,7 +31,7 @@ function replaceAnyIgnoreCase(content: string, searches: string[], replacement: 
 }
 
 function hasMarkdownLink(content: string, linkText: string, url: string): boolean {
-	const normalizedUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+	const normalizedUrl = url.replace(/\/$/, '');
 	return (
 		containsIgnoreCase(content, `[${linkText}](${normalizedUrl})`) ||
 		containsIgnoreCase(content, `[${linkText}](${normalizedUrl}/)`)
@@ -54,7 +54,6 @@ function hasMarkedMarkdownLink(content: string, marker: string, url: string): bo
 			return firstIndex === -1 || (index !== -1 && index < firstIndex) ? index : firstIndex;
 		}, -1);
 		if (linkIndex !== -1 && (lineEnd === -1 || linkIndex < lineEnd)) return true;
-		if (!marker) return false;
 		markerIndex = lowerContent.indexOf(lowerMarker, markerIndex + lowerMarker.length);
 	}
 
@@ -144,7 +143,6 @@ export function isAlreadyCited(
 	if (doi) {
 		const doiUrl = `https://doi.org/${cleanDOI(doi)}`;
 		if (hasMarkedMarkdownLink(content, '', doiUrl)) return true;
-		if (hasMarkedMarkdownLink(content, '🔗', doiUrl)) return true;
 	}
 
 	if (pmcId) {

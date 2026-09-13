@@ -83,6 +83,7 @@ describe('extractDOI', () => {
 		// invalid inputs
 		['not-a-doi', null],
 		['', null],
+		['https://doi.org/invalid-doi', null],
 		['https://pubmed.ncbi.nlm.nih.gov/38570095/', null],
 		['https://example.com/10.1016/j.clinme.2024.100038', null],
 		// trailing punctuation, casing and malformed URLs

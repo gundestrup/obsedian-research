@@ -40,6 +40,19 @@ describe('parsePubMedResult', () => {
 		expect(info.articleType).toBe('Review');
 	});
 
+	it('should leave pmcId empty when articleids has no pmc entry', () => {
+		const result = {
+			title: 'Test Article',
+			source: 'Test Journal',
+			pubdate: '2024 Jan',
+			articleids: [{ idtype: 'doi', value: '10.1234/test' }],
+		};
+
+		const info = parsePubMedResult(result, '38570095', 'Article');
+		expect(info.pmcId).toBe('');
+		expect(info.doi).toBe('10.1234/test');
+	});
+
 	it('should extract DOI from articleids when not in top-level field', () => {
 		const result = {
 			title: 'Test',
@@ -191,6 +204,40 @@ describe('fetchDOIApiData', () => {
 	it('should throw when message is missing', async () => {
 		const requestFn = mockRequest({ status: 200, json: {} });
 		await expect(fetchDOIApiData('10.1234/test', 'Article', requestFn)).rejects.toThrow('Article not found');
+	});
+
+	it('should fall back to defaults when message fields are missing', async () => {
+		const requestFn = mockRequest({ status: 200, json: { message: {} } });
+		const info = await fetchDOIApiData('10.1234/test', 'Article', requestFn);
+
+		expect(info.title).toBe('No title available');
+		expect(info.journal).toBe('No journal available');
+		expect(info.year).toBe('No year available');
+		expect(info.articleType).toBe('Article');
+	});
+
+	it('should fall back to container-title when short-container-title is missing', async () => {
+		const requestFn = mockRequest({
+			status: 200,
+			json: {
+				message: {
+					'container-title': ['Container Journal'],
+					type: 'journal-article',
+					created: { 'date-parts': [[2023]] },
+				},
+			},
+		});
+		const info = await fetchDOIApiData('10.1234/test', 'Article', requestFn);
+
+		expect(info.journal).toBe('Container Journal');
+		expect(info.articleType).toBe('journal-article');
+		expect(info.year).toBe('2023');
+	});
+
+	it('should use Article when type and defaultArticleType are both missing', async () => {
+		const requestFn = mockRequest({ status: 200, json: { message: {} } });
+		const info = await fetchDOIApiData('10.1234/test', '', requestFn);
+		expect(info.articleType).toBe('Article');
 	});
 });
 

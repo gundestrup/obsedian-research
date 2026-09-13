@@ -123,6 +123,24 @@ describe('Duplicate Citation Detection', () => {
 			`;
 			expect(isAlreadyCited(content, '38570095')).to.be.true;
 		});
+
+		it('should detect a marked citation link without trailing slash', () => {
+			const content = '📚 Article: [Title](https://pubmed.ncbi.nlm.nih.gov/38570095) - 2024, Journal';
+			expect(isAlreadyCited(content, '38570095')).to.be.true;
+		});
+
+		it('should find the earliest link when both slash variants exist', () => {
+			const content = '📚 Article: [A](https://pubmed.ncbi.nlm.nih.gov/38570095/) and [B](https://pubmed.ncbi.nlm.nih.gov/38570095)';
+			expect(isAlreadyCited(content, '38570095')).to.be.true;
+		});
+
+		it('should keep scanning markers when the link is on a later line', () => {
+			const content = `
+				📚 Article: [Other](https://pubmed.ncbi.nlm.nih.gov/11111111/) - 2020, Journal
+				📚 Article: [Title](https://pubmed.ncbi.nlm.nih.gov/38570095/) - 2024, Journal
+			`;
+			expect(isAlreadyCited(content, '38570095')).to.be.true;
+		});
 	});
 
 	describe('title and year detection', () => {
