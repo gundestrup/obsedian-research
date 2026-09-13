@@ -11,9 +11,9 @@
 - **Module structure:** `src/types.ts` | `src/utils.ts` | `src/api.ts` | `src/modals.ts` | `src/settings.ts`
 - **Build:** `npm run build` (tsc type-check + esbuild production)
 - **Lint:** `npm run lint` (ESLint 9 flat config + obsidianmd plugin)
-- **Test:** `npm test` (Vitest 3, mocked API calls, 80% coverage target)
+- **Test:** `npm test` (Vitest 4, mocked API calls, 80% coverage target)
 - **Indentation:** Tabs (not spaces)
 - **No `console.debug`**, no inline styles, no `createEl('h2')` — use `Setting.setHeading()`
 - **API pattern:** Functions in `src/api.ts` accept `RequestFunction` param for testability — do not call `requestUrl` directly
-- **Proper nouns** (PubMed, DOI, PMC, NCBI) need eslint-disable comments for sentence-case rule
+- **Proper nouns** (PubMed, DOI, PMC, NCBI) are whitelisted in the sentence-case rule config — add new ones to `eslint.config.mjs` instead of eslint-disable comments
 - See `AGENTS.md` for full architecture, module dependency graph, and API documentation.

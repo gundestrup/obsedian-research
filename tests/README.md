@@ -9,6 +9,7 @@ tests/
 ├── api.test.ts                # Tests for API functions with mocked requestUrl
 ├── extraction.test.ts         # Tests for ID extraction functions
 ├── duplicate-detection.test.ts # Tests for duplicate citation detection
+├── replacement.test.ts         # Tests for URL replacement helpers
 └── citation-formatting.test.ts # Tests for citation formatting
 ```
 
@@ -39,6 +40,7 @@ Fast, isolated tests that don't make external API calls:
 - `api.test.ts` - API functions with mocked `requestUrl`
 - `extraction.test.ts` - ID extraction from URLs and text
 - `duplicate-detection.test.ts` - Citation duplicate detection logic
+- `replacement.test.ts` - URL replacement helpers
 - `citation-formatting.test.ts` - Citation string formatting
 
 There are no integration tests; all API calls are mocked in unit tests.
@@ -73,7 +75,7 @@ Run `npm run test:coverage` to generate a coverage report. The report will be av
 
 Current coverage targets:
 - Statements: 80%+
-- Branches: 75%+
+- Branches: 80%+
 - Functions: 80%+
 - Lines: 80%+
 
@@ -90,4 +92,4 @@ Run `npm install` to ensure all dependencies are installed.
 Make sure `vitest` is installed and your IDE is using the workspace TypeScript version.
 
 ### Watch mode crashes on syntax errors
-This is expected behavior with Mocha + tsx. Fix the syntax error and the tests will auto-restart.
+This is expected behavior with Vitest watch mode. Fix the syntax error and the tests will auto-restart.

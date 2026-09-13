@@ -66,7 +66,7 @@ git status  # Should show "working tree clean"
 **`npm version` will FAIL BEFORE updating versions if:**
 
 - ❌ Lint errors found
-- ❌ Unit tests fail (91 tests)
+- ❌ Unit tests fail
 - ❌ Build fails
 - ❌ No changelog entry for the NEXT version
 - ❌ Git working directory not clean

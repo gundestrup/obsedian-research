@@ -23,9 +23,9 @@ Obsidian plugin that fetches academic article metadata from **PubMed**, **PMC**,
 | Language | TypeScript (strict mode, ES6 target) |
 | Bundler | esbuild (CJS output, `main.ts` → `main.js`) |
 | Linter | ESLint 9 flat config + `eslint-plugin-obsidianmd` |
-| Tests | Vitest 3 + `@vitest/coverage-v8` |
+| Tests | Vitest 4 + `@vitest/coverage-v8` |
 | Platform | Obsidian plugin API (`obsidian` npm package) |
-| Node | ≥ 20 (CI uses Node 20) |
+| Node | ≥ 20 (CI uses Node 24) |
 
 ## Project structure
 
@@ -42,6 +42,7 @@ tests/
   extraction.test.ts      # Unit tests for ID/URL extraction
   citation-formatting.test.ts  # Unit tests for formatCitation()
   duplicate-detection.test.ts  # Unit tests for isAlreadyCited()
+  replacement.test.ts     # Unit tests for URL replacement helpers
   api.test.ts             # Unit tests for API functions with mocked requestUrl
 manifest.json            # Obsidian plugin manifest
 esbuild.config.mjs       # Build config
@@ -96,7 +97,7 @@ npm run release      # lint + test + build (used before version bump)
 ## ESLint rules of note
 
 - `eslint-plugin-obsidianmd` recommended config enforces Obsidian-specific best practices
-- `obsidianmd/ui/sentence-case` — UI text must be sentence case. Proper nouns (PubMed, DOI, PMC, NCBI) require `// eslint-disable-next-line obsidianmd/ui/sentence-case -- <reason>` on the line above the violation
+- `obsidianmd/ui/sentence-case` — UI text must be sentence case. The rule is configured in `eslint.config.mjs` with `acronyms` (NCBI, DOI, PMC, API, URL, ID) and `ignoreWords` (PubMed, Obsidian), so known proper nouns do not need eslint-disable comments. If a new proper noun trips the rule, add it to the config rather than disabling inline.
 - `@typescript-eslint/no-unused-vars` — error level (args excluded)
 - Test files relax unused vars and unused expressions
 
@@ -120,7 +121,7 @@ npm run release      # lint + test + build (used before version bump)
 
 ## Obsidian plugin best practices
 
-- `main.js` should **not** be committed to git (it's a build artifact)
+- `main.js` **is** committed to git — `.gitignore` ignores `*.js` but un-ignores `main.js` (`!main.js`), since users can install the plugin by cloning the repo. Rebuild it (`npm run build`) before committing source changes.
 - `manifest.json` must have `fundingUrl` as a non-empty string or omitted entirely
 - `minAppVersion` should target a reasonably current Obsidian version
 - Plugin settings should use `loadData()`/`saveData()` for persistence
@@ -131,7 +132,7 @@ npm run release      # lint + test + build (used before version bump)
 GitHub Actions workflow (`.github/workflows/release.yml`) triggers on tag push:
 
 1. Checkout code
-2. Setup Node.js 20
+2. Setup Node.js 24
 3. `npm ci`
 4. `npm run build`
 5. Upload `main.js`, `manifest.json`, and `styles.css` as GitHub release assets

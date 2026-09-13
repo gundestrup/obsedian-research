@@ -9,7 +9,7 @@
 - This is an Obsidian plugin written in TypeScript. The entry point is `main.ts`.
 - Always run `npm run lint` and `npm test` before declaring a task complete.
 - Use tab indentation (not spaces) to match the project style.
-- When linting UI text, proper nouns like "PubMed", "DOI", "PMC", and "NCBI" trigger `obsidianmd/ui/sentence-case`. Add `// eslint-disable-next-line obsidianmd/ui/sentence-case -- <reason>` on the line directly above the violation.
+- `obsidianmd/ui/sentence-case` is configured in `eslint.config.mjs` with `acronyms` (NCBI, DOI, PMC, API, URL, ID) and `ignoreWords` (PubMed, Obsidian) — known proper nouns don't trigger it. Add new proper nouns to the config instead of using eslint-disable comments.
 - API functions in `src/api.ts` use dependency injection via `RequestFunction` — never call `requestUrl` directly in those functions.
 - Tests import from `src/` modules, not from duplicated test utilities.
 - See `AGENTS.md` for full architecture, module graph, and build commands.

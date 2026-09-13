@@ -12,5 +12,5 @@
 - Lint with `npm run lint`, test with `npm test`, build with `npm run build`.
 - Use tabs for indentation. Strict TypeScript is enabled.
 - `eslint-plugin-obsidianmd` enforces Obsidian best practices (sentence-case UI text, no `createEl('h2')`, use `Setting.setHeading()`).
-- Tests use Vitest 3 with `vi.fn()` mocks for API calls. No real network calls in tests.
+- Tests use Vitest 4 with `vi.fn()` mocks for API calls. No real network calls in tests.
 - See `AGENTS.md` for full details.

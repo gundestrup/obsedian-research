@@ -23,7 +23,7 @@ npm run test:coverage
 - **Fast**: No external API calls
 - **Reliable**: Consistent results
 - **Files**: `tests/*.test.ts`
-- **Coverage**: 91 tests covering extraction, formatting, duplicate detection, and API parsing
+- **Coverage**: 165 tests covering extraction, formatting, duplicate detection, URL replacement, and API parsing
 
 ### Watch mode (`npm run test:watch`)
 
