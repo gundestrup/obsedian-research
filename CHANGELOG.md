@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
+## [1.4.7] - 2026-09-13
+
 ### Added
 - Added unit tests for `extractUniqueIds`, the `isPubMedIdCited`/`isPMCIdCited`/`isDOICited` helpers, `isAlreadyCited` title-and-year detection, and NCBI API key request parameters.
 - Upload coverage reports to Codecov from CI.
+- Added release, license, CodeQL, Dependabot, Codecov, and minimum Obsidian version badges to the README.
 
 ### Changed
 - Excluded the generated `main.js` bundle from SonarCloud analysis via `.sonarcloud.properties`, removing the bulk of reported code duplication.

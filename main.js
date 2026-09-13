@@ -63,7 +63,7 @@ function replaceAnyIgnoreCase(content, searches, replacement) {
   return result + content.slice(start);
 }
 function hasMarkdownLink(content, linkText, url) {
-  const normalizedUrl = url.endsWith("/") ? url.slice(0, -1) : url;
+  const normalizedUrl = url.replace(/\/$/, "");
   return containsIgnoreCase(content, `[${linkText}](${normalizedUrl})`) || containsIgnoreCase(content, `[${linkText}](${normalizedUrl}/)`);
 }
 function hasMarkedMarkdownLink(content, marker, url) {
@@ -80,7 +80,6 @@ function hasMarkedMarkdownLink(content, marker, url) {
       return firstIndex === -1 || index !== -1 && index < firstIndex ? index : firstIndex;
     }, -1);
     if (linkIndex !== -1 && (lineEnd === -1 || linkIndex < lineEnd)) return true;
-    if (!marker) return false;
     markerIndex = lowerContent.indexOf(lowerMarker, markerIndex + lowerMarker.length);
   }
   return false;
@@ -145,7 +144,6 @@ function isAlreadyCited(content, pubmedId, doi, pmcId, title, year) {
   if (doi) {
     const doiUrl = `https://doi.org/${cleanDOI(doi)}`;
     if (hasMarkedMarkdownLink(content, "", doiUrl)) return true;
-    if (hasMarkedMarkdownLink(content, "\u{1F517}", doiUrl)) return true;
   }
   if (pmcId) {
     const pmcUrl = `https://pmc.ncbi.nlm.nih.gov/articles/${pmcId}/`;
