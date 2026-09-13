@@ -6,6 +6,7 @@ Fetch article metadata from PubMed, PMC, and DOI links automatically.
 [![Semgrep](https://img.shields.io/badge/Semgrep-security%20scan-2c7a4b?logo=semgrep&logoColor=white)](https://semgrep.dev/)
 [![CodeFactor](https://www.codefactor.io/repository/github/gundestrup/obsedian-research/badge)](https://www.codefactor.io/repository/github/gundestrup/obsedian-research)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=gundestrup_obsedian-research&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gundestrup_obsedian-research)
+[![codecov](https://codecov.io/gh/gundestrup/obsedian-research/graph/badge.svg)](https://app.codecov.io/gh/gundestrup/obsedian-research)
 [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/obsedian-research)
 
 ## Features
@@ -61,8 +62,8 @@ npm run lint         # Check code quality
 
 ## Testing
 
-- **Unit Tests**: 91 tests covering core functionality
-- **Coverage**: URL extraction, formatting, duplicate detection, API parsing
+- **Unit Tests**: 157 tests covering core functionality
+- **Coverage**: URL extraction, formatting, duplicate detection, API parsing (80% threshold enforced in CI)
 
 ## API Sources
 
