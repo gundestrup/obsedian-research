@@ -1,10 +1,12 @@
 import { readFileSync, writeFileSync } from "fs";
 import { execFileSync } from "child_process";
+import { dirname } from "path";
 console.log("🚀 Starting release preparation...");
 
 const safeEnv = {
     ...process.env,
-    PATH: process.platform === "win32" ? "C:\\Windows\\System32;C:\\Windows" : "/usr/local/bin:/usr/bin:/bin", // NOSONAR: fixed, non-writable system directories
+    // Fixed directories plus the running Node's bin dir so `/usr/bin/env node` shebangs resolve
+    PATH: process.platform === "win32" ? `${dirname(process.execPath)};C:\\Windows\\System32;C:\\Windows` : `${dirname(process.execPath)}:/usr/local/bin:/usr/bin:/bin`, // NOSONAR: fixed system directories plus Node's own bin directory
 };
 const npmArgs = (args) => process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args;
 const runNpm = (args) => execFileSync(process.env.npm_execpath ? process.execPath : "npm", npmArgs(args), { stdio: "inherit", env: safeEnv });
