@@ -234,7 +234,7 @@ describe('findPubMedIdFromPMC', () => {
 	it('should include the API key in the request URL when provided', async () => {
 		const requestFn = mockRequest({ status: 200, json: { esearchresult: { idlist: [] } } });
 		await findPubMedIdFromPMC('PMC6792392', 'TESTKEY', requestFn);
-		expect(requestFn).toHaveBeenCalledWith({ url: expect.stringContaining('api_key=TESTKEY') });
+		expect(requestFn.mock.calls[0]?.[0].url).toContain('api_key=TESTKEY');
 	});
 });
 
@@ -284,7 +284,7 @@ describe('findPubMedIdFromDOI', () => {
 	it('should include the API key in the request URL when provided', async () => {
 		const requestFn = mockRequest({ status: 200, json: { esearchresult: { idlist: [] } } });
 		await findPubMedIdFromDOI('10.1234/test', 'TESTKEY', requestFn);
-		expect(requestFn).toHaveBeenCalledWith({ url: expect.stringContaining('api_key=TESTKEY') });
+		expect(requestFn.mock.calls[0]?.[0].url).toContain('api_key=TESTKEY');
 	});
 });
 
