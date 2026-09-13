@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [1.4.10] - 2026-09-13
+
+### Fixed
+
+- Replaced the `LICENSE` notice stub with the full AGPL-3.0 license text so GitHub and the Obsidian community plugin review recognize the license.
+
+### Changed
+
+- GitHub releases now include the matching changelog section as release notes, resolving the missing release description flagged by the Obsidian review bot.
+
 ## [1.4.9] - 2026-09-13
 
 ### Changed

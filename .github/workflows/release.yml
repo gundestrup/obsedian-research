@@ -40,9 +40,21 @@ jobs:
             manifest.json
             styles.css
 
+      - name: Generate release notes from changelog
+        run: |
+          awk -v tag="$GITHUB_REF_NAME" '
+            index($0, "## [" tag "]") == 1 { found = 1; print; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "Release $GITHUB_REF_NAME" > release-notes.md
+          fi
+
       - name: Create release and upload assets
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64
         with:
+          body_path: release-notes.md
           files: |
             main.js
             manifest.json
