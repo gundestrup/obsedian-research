@@ -1,4 +1,4 @@
-# Semgrep configuration for obsedian-research
+# Semgrep configuration for obsidian-research
 # https://semgrep.dev/docs/
 #
 # Run: semgrep scan --config .semgrep.yml --error src/ main.ts

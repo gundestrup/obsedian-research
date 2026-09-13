@@ -2,18 +2,18 @@
 
 Fetch article metadata from PubMed, PMC, and DOI links automatically.
 
-[![GitHub release](https://img.shields.io/github/v/release/gundestrup/obsedian-research)](https://github.com/gundestrup/obsedian-research/releases/latest)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://github.com/gundestrup/obsedian-research/blob/main/LICENSE)
-[![CI](https://github.com/gundestrup/obsedian-research/actions/workflows/ci.yml/badge.svg)](https://github.com/gundestrup/obsedian-research/actions/workflows/ci.yml)
-[![Release](https://github.com/gundestrup/obsedian-research/actions/workflows/release.yml/badge.svg)](https://github.com/gundestrup/obsedian-research/actions/workflows/release.yml)
-[![codecov](https://codecov.io/gh/gundestrup/obsedian-research/graph/badge.svg)](https://app.codecov.io/gh/gundestrup/obsedian-research)
+[![GitHub release](https://img.shields.io/github/v/release/gundestrup/obsidian-research)](https://github.com/gundestrup/obsidian-research/releases/latest)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://github.com/gundestrup/obsidian-research/blob/main/LICENSE)
+[![CI](https://github.com/gundestrup/obsidian-research/actions/workflows/ci.yml/badge.svg)](https://github.com/gundestrup/obsidian-research/actions/workflows/ci.yml)
+[![Release](https://github.com/gundestrup/obsidian-research/actions/workflows/release.yml/badge.svg)](https://github.com/gundestrup/obsidian-research/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/gundestrup/obsidian-research/graph/badge.svg)](https://app.codecov.io/gh/gundestrup/obsidian-research)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=gundestrup_obsedian-research&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gundestrup_obsedian-research)
-[![CodeFactor](https://www.codefactor.io/repository/github/gundestrup/obsedian-research/badge)](https://www.codefactor.io/repository/github/gundestrup/obsedian-research)
+[![CodeFactor](https://www.codefactor.io/repository/github/gundestrup/obsidian-research/badge)](https://www.codefactor.io/repository/github/gundestrup/obsidian-research)
 [![Semgrep](https://img.shields.io/badge/Semgrep-security%20scan-2c7a4b?logo=semgrep&logoColor=white)](https://semgrep.dev/)
-[![CodeQL](https://img.shields.io/badge/CodeQL-enabled-2c7a4b?logo=github&logoColor=white)](https://github.com/gundestrup/obsedian-research/security/code-scanning)
-[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-025e8c?logo=dependabot&logoColor=white)](https://github.com/gundestrup/obsedian-research/security/dependabot)
+[![CodeQL](https://img.shields.io/badge/CodeQL-enabled-2c7a4b?logo=github&logoColor=white)](https://github.com/gundestrup/obsidian-research/security/code-scanning)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-025e8c?logo=dependabot&logoColor=white)](https://github.com/gundestrup/obsidian-research/security/dependabot)
 [![Obsidian](https://img.shields.io/badge/Obsidian-%E2%89%A51.13.1-7c3aed?logo=obsidian&logoColor=white)](https://obsidian.md)
-[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/obsedian-research)
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/obsidian-research)
 
 ## Features
 

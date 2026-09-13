@@ -2,7 +2,7 @@
 
 > **Read [`AGENTS.md`](./AGENTS.md) first** — it contains the complete project context, architecture, coding standards, and testing guidelines for this repository.
 >
-> **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>
+> **DeepWiki:** <https://deepwiki.com/gundestrup/obsidian-research>
 
 ## Devin-specific notes
 

@@ -4,7 +4,7 @@
 >
 > **Canonical AI/LLM context file.** All AI assistant config files (`CLAUDE.md`, `.windsurf/rules`, `.devin/workflows`) link here.
 >
-> **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>
+> **DeepWiki:** <https://deepwiki.com/gundestrup/obsidian-research>
 
 ## Project overview
 
@@ -13,8 +13,8 @@ Obsidian plugin that fetches academic article metadata from **PubMed**, **PMC**,
 - **Plugin ID:** `pubmed-fetcher`
 - **Author:** Svend Gundestrup
 - **License:** AGPL-3.0
-- **Repo:** <https://github.com/gundestrup/obsedian-research>
-- **DeepWiki:** <https://deepwiki.com/gundestrup/obsedian-research>
+- **Repo:** <https://github.com/gundestrup/obsidian-research>
+- **DeepWiki:** <https://deepwiki.com/gundestrup/obsidian-research>
 
 ## Tech stack
 
