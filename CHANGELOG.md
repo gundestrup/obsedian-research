@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Use `Vault.process` instead of `Vault.modify` for batch note updates so background writes are atomic, per Obsidian plugin guidelines.
+- Disclosed network use in the README per Obsidian developer policies.
+
 ## [1.4.8] - 2026-09-13
 
 ### Fixed

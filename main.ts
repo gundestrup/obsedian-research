@@ -432,7 +432,7 @@ export default class PubMedFetcherPlugin extends Plugin {
 				filesProcessed++;
 				const result = await this.processArticleLinks(content, ids, file.path);
 				totalProcessed += result.processedCount;
-				if (result.content !== content) await this.app.vault.modify(file, result.content);
+				if (result.content !== content) await this.app.vault.process(file, () => result.content);
 			} catch (error) {
 				console.error('Error processing file', file.path, error);
 			}
