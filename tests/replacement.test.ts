@@ -9,117 +9,134 @@ import {
 	replaceDOIUrl,
 } from '../src/utils';
 
-describe('replacePubMedUrl', () => {
-	it('should replace bare URL with citation', () => {
-		const content = 'See https://pubmed.ncbi.nlm.nih.gov/38570095/ for details';
-		const result = replacePubMedUrl(content, '38570095', '📚 [Article](https://pubmed.ncbi.nlm.nih.gov/38570095/)');
-		expect(result).toBe('See 📚 [Article](https://pubmed.ncbi.nlm.nih.gov/38570095/) for details');
-	});
+type ReplaceFn = (content: string, id: string, citation: string) => string;
 
-	it('should replace URL inside Markdown link', () => {
-		const content = 'See [link](https://pubmed.ncbi.nlm.nih.gov/38570095/) for details';
-		const result = replacePubMedUrl(content, '38570095', '📚 Citation');
-		expect(result).toBe('See [link](📚 Citation) for details');
-	});
+const replacers: { name: string; fn: ReplaceFn; id: string; otherId: string; url: (id: string) => string }[] = [
+	{
+		name: 'replacePubMedUrl',
+		fn: replacePubMedUrl,
+		id: '38570095',
+		otherId: '12345',
+		url: (id) => `https://pubmed.ncbi.nlm.nih.gov/${id}/`,
+	},
+	{
+		name: 'replacePMCUrl',
+		fn: replacePMCUrl,
+		id: 'PMC6792392',
+		otherId: 'PMC12345',
+		url: (id) => `https://pmc.ncbi.nlm.nih.gov/articles/${id}/`,
+	},
+	{
+		name: 'replaceDOIUrl',
+		fn: replaceDOIUrl,
+		id: '10.1234/test',
+		otherId: '10.5678/other',
+		url: (id) => `https://doi.org/${id}`,
+	},
+];
 
-	it('should replace URL without trailing slash', () => {
-		const content = 'See https://pubmed.ncbi.nlm.nih.gov/38570095 for details';
-		const result = replacePubMedUrl(content, '38570095', 'CITATION');
-		expect(result).toBe('See CITATION for details');
-	});
-
-	it('should replace HTTP variant', () => {
-		const content = 'See http://pubmed.ncbi.nlm.nih.gov/38570095/ for details';
-		const result = replacePubMedUrl(content, '38570095', 'CITATION');
-		expect(result).toBe('See CITATION for details');
-	});
-
+describe.each(replacers)('$name', ({ fn, id, otherId, url }) => {
 	it('should replace all occurrences of repeated IDs', () => {
-		const content = 'https://pubmed.ncbi.nlm.nih.gov/38570095/ and https://pubmed.ncbi.nlm.nih.gov/38570095/';
-		const result = replacePubMedUrl(content, '38570095', 'CITATION');
-		expect(result).toBe('CITATION and CITATION');
+		const content = `${url(id)} and ${url(id)}`;
+		expect(fn(content, id, 'CITATION')).toBe('CITATION and CITATION');
 	});
 
-	it('should not replace different PubMed IDs', () => {
-		const content = 'https://pubmed.ncbi.nlm.nih.gov/38570095/ and https://pubmed.ncbi.nlm.nih.gov/12345/';
-		const result = replacePubMedUrl(content, '38570095', 'CITATION');
-		expect(result).toBe('CITATION and https://pubmed.ncbi.nlm.nih.gov/12345/');
+	it('should not replace different IDs', () => {
+		const content = `${url(id)} and ${url(otherId)}`;
+		expect(fn(content, id, 'CITATION')).toBe(`CITATION and ${url(otherId)}`);
 	});
+});
 
-	it('should handle URL with fragment', () => {
-		const content = 'See https://pubmed.ncbi.nlm.nih.gov/38570095/#abstract for details';
-		const result = replacePubMedUrl(content, '38570095', 'CITATION');
-		expect(result).toBe('See CITATION#abstract for details');
-	});
-
-	it('should handle URL with query string', () => {
-		const content = 'See https://pubmed.ncbi.nlm.nih.gov/38570095/?ref=foo for details';
-		const result = replacePubMedUrl(content, '38570095', 'CITATION');
-		expect(result).toBe('See CITATION?ref=foo for details');
+describe('replacePubMedUrl', () => {
+	it.each<[string, string, string, string]>([
+		[
+			'bare URL',
+			'See https://pubmed.ncbi.nlm.nih.gov/38570095/ for details',
+			'📚 [Article](https://pubmed.ncbi.nlm.nih.gov/38570095/)',
+			'See 📚 [Article](https://pubmed.ncbi.nlm.nih.gov/38570095/) for details',
+		],
+		[
+			'URL inside Markdown link',
+			'See [link](https://pubmed.ncbi.nlm.nih.gov/38570095/) for details',
+			'📚 Citation',
+			'See [link](📚 Citation) for details',
+		],
+		[
+			'URL without trailing slash',
+			'See https://pubmed.ncbi.nlm.nih.gov/38570095 for details',
+			'CITATION',
+			'See CITATION for details',
+		],
+		[
+			'HTTP variant',
+			'See http://pubmed.ncbi.nlm.nih.gov/38570095/ for details',
+			'CITATION',
+			'See CITATION for details',
+		],
+		[
+			'URL with fragment',
+			'See https://pubmed.ncbi.nlm.nih.gov/38570095/#abstract for details',
+			'CITATION',
+			'See CITATION#abstract for details',
+		],
+		[
+			'URL with query string',
+			'See https://pubmed.ncbi.nlm.nih.gov/38570095/?ref=foo for details',
+			'CITATION',
+			'See CITATION?ref=foo for details',
+		],
+	])('should replace %s', (_name, content, citation, expected) => {
+		expect(replacePubMedUrl(content, '38570095', citation)).toBe(expected);
 	});
 });
 
 describe('replacePMCUrl', () => {
-	it('should replace articles/ URL with citation', () => {
-		const content = 'See https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/ for details';
-		const result = replacePMCUrl(content, 'PMC6792392', '📄 Citation');
-		expect(result).toBe('See 📄 Citation for details');
-	});
-
-	it('should replace simple PMC URL', () => {
-		const content = 'See https://pmc.ncbi.nlm.nih.gov/PMC6792392/ for details';
-		const result = replacePMCUrl(content, 'PMC6792392', 'CITATION');
-		expect(result).toBe('See CITATION for details');
-	});
-
-	it('should replace all occurrences of repeated PMC IDs', () => {
-		const content = 'https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/ and https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/';
-		const result = replacePMCUrl(content, 'PMC6792392', 'CITATION');
-		expect(result).toBe('CITATION and CITATION');
-	});
-
-	it('should not replace different PMC IDs', () => {
-		const content = 'https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/ and https://pmc.ncbi.nlm.nih.gov/articles/PMC12345/';
-		const result = replacePMCUrl(content, 'PMC6792392', 'CITATION');
-		expect(result).toBe('CITATION and https://pmc.ncbi.nlm.nih.gov/articles/PMC12345/');
+	it.each<[string, string, string, string]>([
+		[
+			'articles/ URL',
+			'See https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/ for details',
+			'📄 Citation',
+			'See 📄 Citation for details',
+		],
+		[
+			'simple PMC URL',
+			'See https://pmc.ncbi.nlm.nih.gov/PMC6792392/ for details',
+			'CITATION',
+			'See CITATION for details',
+		],
+	])('should replace %s', (_name, content, citation, expected) => {
+		expect(replacePMCUrl(content, 'PMC6792392', citation)).toBe(expected);
 	});
 });
 
 describe('replaceDOIUrl', () => {
-	it('should replace doi.org URL with citation', () => {
-		const content = 'See https://doi.org/10.1234/test for details';
-		const result = replaceDOIUrl(content, '10.1234/test', '🔗 Citation');
-		expect(result).toBe('See 🔗 Citation for details');
-	});
-
-	it('should replace dx.doi.org URL', () => {
-		const content = 'See https://dx.doi.org/10.1234/test for details';
-		const result = replaceDOIUrl(content, '10.1234/test', 'CITATION');
-		expect(result).toBe('See CITATION for details');
-	});
-
-	it('should replace all occurrences of repeated DOIs', () => {
-		const content = 'https://doi.org/10.1234/test and https://doi.org/10.1234/test';
-		const result = replaceDOIUrl(content, '10.1234/test', 'CITATION');
-		expect(result).toBe('CITATION and CITATION');
-	});
-
-	it('should not replace different DOIs', () => {
-		const content = 'https://doi.org/10.1234/test and https://doi.org/10.5678/other';
-		const result = replaceDOIUrl(content, '10.1234/test', 'CITATION');
-		expect(result).toBe('CITATION and https://doi.org/10.5678/other');
-	});
-
-	it('should handle DOI URL with fragment', () => {
-		const content = 'See https://doi.org/10.1234/test#section for details';
-		const result = replaceDOIUrl(content, '10.1234/test', 'CITATION');
-		expect(result).toBe('See CITATION#section for details');
-	});
-
-	it('should handle DOI URL with query string', () => {
-		const content = 'See https://doi.org/10.1234/test?ref=foo for details';
-		const result = replaceDOIUrl(content, '10.1234/test', 'CITATION');
-		expect(result).toBe('See CITATION?ref=foo for details');
+	it.each<[string, string, string, string]>([
+		[
+			'doi.org URL',
+			'See https://doi.org/10.1234/test for details',
+			'🔗 Citation',
+			'See 🔗 Citation for details',
+		],
+		[
+			'dx.doi.org URL',
+			'See https://dx.doi.org/10.1234/test for details',
+			'CITATION',
+			'See CITATION for details',
+		],
+		[
+			'DOI URL with fragment',
+			'See https://doi.org/10.1234/test#section for details',
+			'CITATION',
+			'See CITATION#section for details',
+		],
+		[
+			'DOI URL with query string',
+			'See https://doi.org/10.1234/test?ref=foo for details',
+			'CITATION',
+			'See CITATION?ref=foo for details',
+		],
+	])('should replace %s', (_name, content, citation, expected) => {
+		expect(replaceDOIUrl(content, '10.1234/test', citation)).toBe(expected);
 	});
 });
 

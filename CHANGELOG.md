@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+- Excluded the generated `main.js` bundle from SonarCloud analysis via `.sonarcloud.properties`, removing the bulk of reported code duplication.
+- Refactored the extraction and replacement unit tests into table-driven `it.each`/`describe.each` cases to eliminate duplicated test blocks.
+
 ## [1.4.6] - 2026-09-11
 
 ### Fixed

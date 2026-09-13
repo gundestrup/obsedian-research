@@ -11,174 +11,100 @@ import {
 	extractURLs,
 } from '../src/utils';
 
-describe('PubMed ID Extraction', () => {
-	describe('from URLs', () => {
-		it('should extract PubMed ID from standard URL with trailing slash', () => {
-			expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/38570095/')).to.equal('38570095');
-		});
-
-		it('should extract PubMed ID from standard URL without trailing slash', () => {
-			expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/38570095')).to.equal('38570095');
-		});
-
-		it('should extract PubMed ID from HTTP URL', () => {
-			expect(extractPubMedId('http://pubmed.ncbi.nlm.nih.gov/12345678/')).to.equal('12345678');
-		});
-
-		it('should extract single-digit PubMed ID', () => {
-			expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/1/')).to.equal('1');
-		});
-
-		it('should extract long PubMed ID', () => {
-			expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/999999999')).to.equal('999999999');
-		});
-	});
-
-	describe('from direct input', () => {
-		it('should accept direct numeric ID', () => {
-			expect(extractPubMedId('38570095')).to.equal('38570095');
-		});
-
-		it('should accept single-digit ID', () => {
-			expect(extractPubMedId('1')).to.equal('1');
-		});
-	});
-
-	describe('invalid inputs', () => {
-		it('should return null for PMC URL', () => {
-			expect(extractPubMedId('https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/')).to.be.null;
-		});
-
-		it('should return null for wrong domain', () => {
-			expect(extractPubMedId('https://www.ncbi.nlm.nih.gov/pubmed/38570095/')).to.be.null;
-		});
-
-		it('should return null for non-numeric ID', () => {
-			expect(extractPubMedId('abc123def')).to.be.null;
-		});
-
-		it('should return null for empty string', () => {
-			expect(extractPubMedId('')).to.be.null;
-		});
-
-		it('should return null for URL without ID', () => {
-			expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/')).to.be.null;
-		});
-
-		it('should return null for decimal numbers', () => {
-			expect(extractPubMedId('123.456')).to.be.null;
-		});
+describe('extractPubMedId', () => {
+	it.each<[string, string | null]>([
+		// from URLs
+		['https://pubmed.ncbi.nlm.nih.gov/38570095/', '38570095'],
+		['https://pubmed.ncbi.nlm.nih.gov/38570095', '38570095'],
+		['http://pubmed.ncbi.nlm.nih.gov/12345678/', '12345678'],
+		['https://pubmed.ncbi.nlm.nih.gov/1/', '1'],
+		['https://pubmed.ncbi.nlm.nih.gov/999999999', '999999999'],
+		// from direct input
+		['38570095', '38570095'],
+		['1', '1'],
+		// invalid inputs
+		['https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/', null],
+		['https://www.ncbi.nlm.nih.gov/pubmed/38570095/', null],
+		['abc123def', null],
+		['', null],
+		['https://pubmed.ncbi.nlm.nih.gov/', null],
+		['123.456', null],
+		// trailing punctuation
+		['https://pubmed.ncbi.nlm.nih.gov/38570095/.', '38570095'],
+		['https://pubmed.ncbi.nlm.nih.gov/38570095/,', '38570095'],
+		// casing and malformed URLs
+		['HTTPS://PUBMED.NCBI.NLM.NIH.GOV/38570095/', '38570095'],
+		['pubmed.ncbi.nlm.nih.gov/38570095/', '38570095'],
+		['https://pubmed.ncbi.nlm.nih.gov/38570095/extra/path/', '38570095'],
+		// false-positive hostnames
+		['https://arxiv.org/abs/38570095', null],
+		['https://scholar.google.com/38570095', null],
+		['https://pubmed.ncbi.nlm.nih.gov.evil.com/38570095/', null],
+	])('extractPubMedId(%j) = %j', (input, expected) => {
+		expect(extractPubMedId(input)).to.equal(expected);
 	});
 });
 
-describe('PMC ID Extraction', () => {
-	describe('from URLs', () => {
-		it('should extract PMC ID from articles URL with trailing slash', () => {
-			expect(extractPMCId('https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/')).to.equal('PMC6792392');
-		});
-
-		it('should extract PMC ID from articles URL without trailing slash', () => {
-			expect(extractPMCId('https://pmc.ncbi.nlm.nih.gov/articles/PMC12345678')).to.equal('PMC12345678');
-		});
-
-		it('should extract PMC ID from simple URL', () => {
-			expect(extractPMCId('https://pmc.ncbi.nlm.nih.gov/PMC6792392/')).to.equal('PMC6792392');
-		});
-
-		it('should extract PMC ID from HTTP URL', () => {
-			expect(extractPMCId('http://pmc.ncbi.nlm.nih.gov/articles/PMC98765432/')).to.equal('PMC98765432');
-		});
-	});
-
-	describe('from direct input', () => {
-		it('should accept direct PMC ID', () => {
-			expect(extractPMCId('PMC6792392')).to.equal('PMC6792392');
-		});
-
-		it('should accept PMC ID with large number', () => {
-			expect(extractPMCId('PMC123456789')).to.equal('PMC123456789');
-		});
-	});
-
-	describe('invalid inputs', () => {
-		it('should return null for PubMed URL', () => {
-			expect(extractPMCId('https://pubmed.ncbi.nlm.nih.gov/38570095/')).to.be.null;
-		});
-
-		it('should return null for PMC ID without prefix', () => {
-			expect(extractPMCId('6792392')).to.be.null;
-		});
-
-		it('should return null for empty string', () => {
-			expect(extractPMCId('')).to.be.null;
-		});
-
-		it('should return null for invalid format', () => {
-			expect(extractPMCId('PMC-6792392')).to.be.null;
-		});
+describe('extractPMCId', () => {
+	it.each<[string, string | null]>([
+		// from URLs
+		['https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/', 'PMC6792392'],
+		['https://pmc.ncbi.nlm.nih.gov/articles/PMC12345678', 'PMC12345678'],
+		['https://pmc.ncbi.nlm.nih.gov/PMC6792392/', 'PMC6792392'],
+		['http://pmc.ncbi.nlm.nih.gov/articles/PMC98765432/', 'PMC98765432'],
+		// from direct input
+		['PMC6792392', 'PMC6792392'],
+		['PMC123456789', 'PMC123456789'],
+		// invalid inputs
+		['https://pubmed.ncbi.nlm.nih.gov/38570095/', null],
+		['6792392', null],
+		['', null],
+		['PMC-6792392', null],
+		// trailing punctuation, casing and malformed URLs
+		['https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/.', 'PMC6792392'],
+		['https://PMC.ncbi.nlm.nih.gov/articles/PMC6792392/', 'PMC6792392'],
+		['pmc.ncbi.nlm.nih.gov/articles/PMC6792392/', null],
+	])('extractPMCId(%j) = %j', (input, expected) => {
+		expect(extractPMCId(input)).to.equal(expected);
 	});
 });
 
-describe('DOI Extraction', () => {
-	describe('from URLs', () => {
-		it('should extract DOI from standard doi.org URL', () => {
-			expect(extractDOI('https://doi.org/10.1016/j.clinme.2024.100038')).to.equal('10.1016/j.clinme.2024.100038');
-		});
-
-		it('should extract DOI from dx.doi.org URL', () => {
-			expect(extractDOI('https://dx.doi.org/10.1007/s10654-023-01010-8')).to.equal('10.1007/s10654-023-01010-8');
-		});
-
-		it('should extract DOI from HTTP URL', () => {
-			expect(extractDOI('http://doi.org/10.1186/s12916-023-02845-8')).to.equal('10.1186/s12916-023-02845-8');
-		});
-
-		it('should handle DOI in markdown link', () => {
-			const markdown = '[Article](https://doi.org/10.1016/j.test.2024.001)';
-			expect(extractDOI(markdown)).to.equal('10.1016/j.test.2024.001');
-		});
+describe('extractDOI', () => {
+	it.each<[string, string | null]>([
+		// from URLs
+		['https://doi.org/10.1016/j.clinme.2024.100038', '10.1016/j.clinme.2024.100038'],
+		['https://dx.doi.org/10.1007/s10654-023-01010-8', '10.1007/s10654-023-01010-8'],
+		['http://doi.org/10.1186/s12916-023-02845-8', '10.1186/s12916-023-02845-8'],
+		['[Article](https://doi.org/10.1016/j.test.2024.001)', '10.1016/j.test.2024.001'],
+		// from direct input
+		['10.1016/j.clinme.2024.100038', '10.1016/j.clinme.2024.100038'],
+		['10.1007/978-3-319-12345-6_7', '10.1007/978-3-319-12345-6_7'],
+		// invalid inputs
+		['not-a-doi', null],
+		['', null],
+		['https://pubmed.ncbi.nlm.nih.gov/38570095/', null],
+		['https://example.com/10.1016/j.clinme.2024.100038', null],
+		// trailing punctuation, casing and malformed URLs
+		['https://doi.org/10.1016/j.clinme.2024.100038.', '10.1016/j.clinme.2024.100038'],
+		['https://DOI.org/10.1016/j.clinme.2024.100038', '10.1016/j.clinme.2024.100038'],
+		['doi.org/10.1016/j.clinme.2024.100038', '10.1016/j.clinme.2024.100038'],
+		// fragments and query strings
+		['https://doi.org/10.1016/j.clinme.2024.100038#section1', '10.1016/j.clinme.2024.100038'],
+		['https://doi.org/10.1016/j.clinme.2024.100038?ref=foo', '10.1016/j.clinme.2024.100038'],
+		['https://doi.org/10.1016/j.clinme.2024.100038?ref=foo#section1', '10.1016/j.clinme.2024.100038'],
+	])('extractDOI(%j) = %j', (input, expected) => {
+		expect(extractDOI(input)).to.equal(expected);
 	});
+});
 
-	describe('from direct input', () => {
-		it('should accept direct DOI', () => {
-			expect(extractDOI('10.1016/j.clinme.2024.100038')).to.equal('10.1016/j.clinme.2024.100038');
-		});
-
-		it('should accept DOI with complex suffix', () => {
-			expect(extractDOI('10.1007/978-3-319-12345-6_7')).to.equal('10.1007/978-3-319-12345-6_7');
-		});
-	});
-
-	describe('DOI cleaning', () => {
-		it('should remove "doi:" prefix (lowercase)', () => {
-			expect(cleanDOI('doi: 10.1016/j.clinme.2024.100038')).to.equal('10.1016/j.clinme.2024.100038');
-		});
-
-		it('should remove "DOI:" prefix (uppercase)', () => {
-			expect(cleanDOI('DOI: 10.1007/s10654-023-01010-8')).to.equal('10.1007/s10654-023-01010-8');
-		});
-
-		it('should trim whitespace', () => {
-			expect(cleanDOI('  10.1186/s12916-023-02845-8  ')).to.equal('10.1186/s12916-023-02845-8');
-		});
-
-		it('should handle already clean DOI', () => {
-			expect(cleanDOI('10.1016/j.test.2024.001')).to.equal('10.1016/j.test.2024.001');
-		});
-	});
-
-	describe('invalid inputs', () => {
-		it('should return null for invalid DOI format', () => {
-			expect(extractDOI('not-a-doi')).to.be.null;
-		});
-
-		it('should return null for empty string', () => {
-			expect(extractDOI('')).to.be.null;
-		});
-
-		it('should return null for PubMed URL', () => {
-			expect(extractDOI('https://pubmed.ncbi.nlm.nih.gov/38570095/')).to.be.null;
-		});
+describe('cleanDOI', () => {
+	it.each<[string, string]>([
+		['doi: 10.1016/j.clinme.2024.100038', '10.1016/j.clinme.2024.100038'],
+		['DOI: 10.1007/s10654-023-01010-8', '10.1007/s10654-023-01010-8'],
+		['  10.1186/s12916-023-02845-8  ', '10.1186/s12916-023-02845-8'],
+		['10.1016/j.test.2024.001', '10.1016/j.test.2024.001'],
+	])('cleanDOI(%j) = %j', (input, expected) => {
+		expect(cleanDOI(input)).to.equal(expected);
 	});
 });
 
@@ -234,87 +160,5 @@ describe('URL Extraction from Content', () => {
 		expect(urls.pubmedUrls).to.have.lengthOf(1);
 		expect(urls.pmcUrls).to.have.lengthOf(0);
 		expect(urls.doiUrls).to.have.lengthOf(0);
-	});
-});
-
-describe('Edge cases — trailing punctuation', () => {
-	it('should extract PubMed ID from URL with trailing period', () => {
-		expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/38570095/.')).to.equal('38570095');
-	});
-
-	it('should extract PubMed ID from URL with trailing comma', () => {
-		expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/38570095/,')).to.equal('38570095');
-	});
-
-	it('should extract PMC ID from URL with trailing period', () => {
-		expect(extractPMCId('https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/.')).to.equal('PMC6792392');
-	});
-
-	it('should extract DOI from URL with trailing period', () => {
-		expect(extractDOI('https://doi.org/10.1016/j.clinme.2024.100038.')).to.equal('10.1016/j.clinme.2024.100038');
-	});
-});
-
-describe('Edge cases — mixed casing', () => {
-	it('should extract PubMed ID from uppercase HTTPS URL', () => {
-		expect(extractPubMedId('HTTPS://PUBMED.NCBI.NLM.NIH.GOV/38570095/')).to.equal('38570095');
-	});
-
-	it('should extract PMC ID from mixed-case URL', () => {
-		expect(extractPMCId('https://PMC.ncbi.nlm.nih.gov/articles/PMC6792392/')).to.equal('PMC6792392');
-	});
-
-	it('should extract DOI from mixed-case doi.org URL', () => {
-		expect(extractDOI('https://DOI.org/10.1016/j.clinme.2024.100038')).to.equal('10.1016/j.clinme.2024.100038');
-	});
-});
-
-describe('Edge cases — malformed URLs', () => {
-	it('should extract PubMed ID from URL with no protocol (lenient match)', () => {
-		expect(extractPubMedId('pubmed.ncbi.nlm.nih.gov/38570095/')).to.equal('38570095');
-	});
-
-	it('should return null for PMC URL with no protocol', () => {
-		expect(extractPMCId('pmc.ncbi.nlm.nih.gov/articles/PMC6792392/')).to.be.null;
-	});
-
-	it('should extract DOI from URL with no protocol (lenient match)', () => {
-		expect(extractDOI('doi.org/10.1016/j.clinme.2024.100038')).to.equal('10.1016/j.clinme.2024.100038');
-	});
-
-	it('should return null for PubMed URL with extra path segments', () => {
-		expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov/38570095/extra/path/')).to.equal('38570095');
-	});
-});
-
-describe('Edge cases — false-positive hostnames', () => {
-	it('should not extract from arxiv URL', () => {
-		expect(extractPubMedId('https://arxiv.org/abs/38570095')).to.be.null;
-	});
-
-	it('should not extract from Google Scholar URL', () => {
-		expect(extractPubMedId('https://scholar.google.com/38570095')).to.be.null;
-	});
-
-	it('should not extract from a look-alike domain', () => {
-		expect(extractPubMedId('https://pubmed.ncbi.nlm.nih.gov.evil.com/38570095/')).to.be.null;
-	});
-
-	it('should not extract DOI from non-doi.org URL', () => {
-		expect(extractDOI('https://example.com/10.1016/j.clinme.2024.100038')).to.be.null;
-	});
-});
-
-describe('Edge cases — DOI with URL fragments and query strings', () => {
-	it('should extract DOI from URL with fragment', () => {
-		expect(extractDOI('https://doi.org/10.1016/j.clinme.2024.100038#section1')).to.equal('10.1016/j.clinme.2024.100038');
-	});
-
-	it('should extract DOI from URL with query string', () => {
-		expect(extractDOI('https://doi.org/10.1016/j.clinme.2024.100038?ref=foo')).to.equal('10.1016/j.clinme.2024.100038');
-	});
-
-	it('should extract DOI from URL with both fragment and query', () => {
-		expect(extractDOI('https://doi.org/10.1016/j.clinme.2024.100038?ref=foo#section1')).to.equal('10.1016/j.clinme.2024.100038');
 	});
 });
