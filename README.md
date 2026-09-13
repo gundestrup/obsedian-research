@@ -77,6 +77,8 @@ npm run lint         # Check code quality
 - **DOI**: Crossref API
 - **PMC**: PubMed Central
 
+**Network use**: This plugin sends requests to NCBI E-utilities (PubMed/PMC) and the Crossref API to fetch article metadata, only when you invoke its commands. No data is collected or shared beyond the article identifiers you provide.
+
 ## License
 
 AGPL-3.0
