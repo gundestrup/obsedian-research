@@ -12,6 +12,7 @@
 - Classified `tests/` as test code in SonarCloud via `sonar.tests`, fixing the duplication quality gate failure.
 - Scoped Vitest coverage to unit-testable modules, excluding the Obsidian-bound `main.ts`, `src/modals.ts`, and `src/settings.ts`.
 - Run `npm run test:coverage` in CI so the 80 percent coverage thresholds are enforced.
+- Updated TypeScript from 5.9.3 to 6.0.3.
 
 ### Removed
 - Removed the unused `escapeRegex` helper.
