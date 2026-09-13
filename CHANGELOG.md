@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Set explicit `sonar.sources` in `.sonarcloud.properties` so the source set no longer overlaps `sonar.tests`, which was failing every SonarCloud analysis.
+
 ### Changed
 
 - Set `min-release-age=7` in `.npmrc` so newly published package versions must age seven days before npm resolves them (Semgrep supply-chain finding).
