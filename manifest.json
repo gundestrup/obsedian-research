@@ -1,7 +1,7 @@
 {
 	"id": "pubmed-fetcher",
 	"name": "PubMed Article Fetcher",
-	"version": "1.4.10",
+	"version": "1.4.11",
 	"minAppVersion": "1.13.1",
 	"description": "Fetch article metadata from PubMed, PMC, and DOI links automatically.",
 	"author": "Svend Gundestrup",
