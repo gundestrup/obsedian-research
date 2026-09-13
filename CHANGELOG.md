@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Set `min-release-age=7` in `.npmrc` so newly published package versions must age seven days before npm resolves them (Semgrep supply-chain finding).
+
 ## [1.4.11] - 2026-09-13
 
 ### Fixed
