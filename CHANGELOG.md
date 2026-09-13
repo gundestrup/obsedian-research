@@ -2,9 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+- Added unit tests for `extractUniqueIds`, the `isPubMedIdCited`/`isPMCIdCited`/`isDOICited` helpers, `isAlreadyCited` title-and-year detection, and NCBI API key request parameters.
+
 ### Changed
 - Excluded the generated `main.js` bundle from SonarCloud analysis via `.sonarcloud.properties`, removing the bulk of reported code duplication.
 - Refactored the extraction and replacement unit tests into table-driven `it.each`/`describe.each` cases to eliminate duplicated test blocks.
+- Classified `tests/` as test code in SonarCloud via `sonar.tests`, fixing the duplication quality gate failure.
+- Scoped Vitest coverage to unit-testable modules, excluding the Obsidian-bound `main.ts`, `src/modals.ts`, and `src/settings.ts`.
+
+### Removed
+- Removed the unused `escapeRegex` helper.
 
 ## [1.4.6] - 2026-09-11
 

@@ -3,7 +3,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { isAlreadyCited } from '../src/utils';
+import {
+	isAlreadyCited,
+	isPubMedIdCited,
+	isPMCIdCited,
+	isDOICited,
+} from '../src/utils';
 
 describe('Duplicate Citation Detection', () => {
 	describe('PubMed ID detection', () => {
@@ -117,6 +122,88 @@ describe('Duplicate Citation Detection', () => {
 				Second mention: 📚 Article: [Title](https://pubmed.ncbi.nlm.nih.gov/38570095/) - 2024, Journal
 			`;
 			expect(isAlreadyCited(content, '38570095')).to.be.true;
+		});
+	});
+
+	describe('title and year detection', () => {
+		const cited =
+			'📚 Article: [An introduction to neuropalliative care](https://pubmed.ncbi.nlm.nih.gov/38570095/) - 2024, Clin Med (Lond)';
+
+		it('should detect citation by title and year', () => {
+			expect(
+				isAlreadyCited(cited, undefined, undefined, undefined, 'An introduction to neuropalliative care', '2024')
+			).to.be.true;
+		});
+
+		it('should match title and year case-insensitively', () => {
+			expect(
+				isAlreadyCited(cited, undefined, undefined, undefined, 'AN INTRODUCTION TO NEUROPALLIATIVE CARE', '2024')
+			).to.be.true;
+		});
+
+		it('should not detect a different year', () => {
+			expect(
+				isAlreadyCited(cited, undefined, undefined, undefined, 'An introduction to neuropalliative care', '2023')
+			).to.be.false;
+		});
+
+		it('should not detect a different title', () => {
+			expect(
+				isAlreadyCited(cited, undefined, undefined, undefined, 'A different article', '2024')
+			).to.be.false;
+		});
+
+		it('should require the citation marker on the same line', () => {
+			const content = `
+				Plain link: [An introduction to neuropalliative care](https://example.com) - 2024
+				📚 Article: [Another article](https://pubmed.ncbi.nlm.nih.gov/12345678/) - 2023, Journal
+			`;
+			expect(
+				isAlreadyCited(content, undefined, undefined, undefined, 'An introduction to neuropalliative care', '2024')
+			).to.be.false;
+		});
+	});
+});
+
+describe('Identifier citation helpers', () => {
+	describe('isPubMedIdCited', () => {
+		it('should detect a PubMed markdown link', () => {
+			const content = '📚 Article: [Title](https://pubmed.ncbi.nlm.nih.gov/38570095/) - 2024, Journal';
+			expect(isPubMedIdCited(content, '38570095')).to.be.true;
+		});
+
+		it('should not detect a bare PubMed URL', () => {
+			const content = 'Check https://pubmed.ncbi.nlm.nih.gov/38570095/ for details';
+			expect(isPubMedIdCited(content, '38570095')).to.be.false;
+		});
+
+		it('should not detect a different PubMed ID', () => {
+			const content = '📚 Article: [Title](https://pubmed.ncbi.nlm.nih.gov/12345678/) - 2024, Journal';
+			expect(isPubMedIdCited(content, '38570095')).to.be.false;
+		});
+	});
+
+	describe('isPMCIdCited', () => {
+		it('should detect a PMC markdown link', () => {
+			const content = '📚 Article: [Title](https://pubmed.ncbi.nlm.nih.gov/6792392/) - 2024, Journal [📄](https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/)';
+			expect(isPMCIdCited(content, 'PMC6792392')).to.be.true;
+		});
+
+		it('should not detect a bare PMC URL', () => {
+			const content = 'Full text: https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/';
+			expect(isPMCIdCited(content, 'PMC6792392')).to.be.false;
+		});
+	});
+
+	describe('isDOICited', () => {
+		it('should detect a DOI markdown link', () => {
+			const content = '🔗 Article: [Title](https://doi.org/10.1016/j.clinme.2024.100038) - 2024, Journal';
+			expect(isDOICited(content, '10.1016/j.clinme.2024.100038')).to.be.true;
+		});
+
+		it('should not detect a bare DOI URL', () => {
+			const content = 'Read more: https://doi.org/10.1016/j.clinme.2024.100038';
+			expect(isDOICited(content, '10.1016/j.clinme.2024.100038')).to.be.false;
 		});
 	});
 });

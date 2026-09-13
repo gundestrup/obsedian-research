@@ -230,6 +230,12 @@ describe('findPubMedIdFromPMC', () => {
 		const result = await findPubMedIdFromPMC('PMC9999999', '', requestFn);
 		expect(result).toBeNull();
 	});
+
+	it('should include the API key in the request URL when provided', async () => {
+		const requestFn = mockRequest({ status: 200, json: { esearchresult: { idlist: [] } } });
+		await findPubMedIdFromPMC('PMC6792392', 'TESTKEY', requestFn);
+		expect(requestFn).toHaveBeenCalledWith({ url: expect.stringContaining('api_key=TESTKEY') });
+	});
 });
 
 describe('findPubMedIdFromDOI', () => {
@@ -273,6 +279,12 @@ describe('findPubMedIdFromDOI', () => {
 		const requestFn = vi.fn().mockRejectedValue(new Error('Network error'));
 		const result = await findPubMedIdFromDOI('10.1234/test', '', requestFn);
 		expect(result).toBeNull();
+	});
+
+	it('should include the API key in the request URL when provided', async () => {
+		const requestFn = mockRequest({ status: 200, json: { esearchresult: { idlist: [] } } });
+		await findPubMedIdFromDOI('10.1234/test', 'TESTKEY', requestFn);
+		expect(requestFn).toHaveBeenCalledWith({ url: expect.stringContaining('api_key=TESTKEY') });
 	});
 });
 

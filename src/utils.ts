@@ -1,9 +1,5 @@
 import type { ArticleInfo } from './types';
 
-export function escapeRegex(str: string): string {
-	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function containsIgnoreCase(content: string, search: string): boolean {
 	return content.toLowerCase().includes(search.toLowerCase());
 }

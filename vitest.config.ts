@@ -7,9 +7,9 @@ export default defineConfig({
 		include: ['tests/**/*.test.ts'],
 		coverage: {
 			provider: 'v8',
-			reporter: ['text', 'html'],
-			include: ['src/**/*.ts', 'main.ts'],
-			exclude: ['src/types.ts'],
+			reporter: ['text', 'html', 'lcov'],
+			include: ['src/**/*.ts'],
+			exclude: ['src/types.ts', 'src/modals.ts', 'src/settings.ts'],
 			thresholds: {
 				statements: 80,
 				branches: 80,

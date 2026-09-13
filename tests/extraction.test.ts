@@ -9,6 +9,7 @@ import {
 	extractDOI,
 	cleanDOI,
 	extractURLs,
+	extractUniqueIds,
 } from '../src/utils';
 
 describe('extractPubMedId', () => {
@@ -160,5 +161,30 @@ describe('URL Extraction from Content', () => {
 		expect(urls.pubmedUrls).to.have.lengthOf(1);
 		expect(urls.pmcUrls).to.have.lengthOf(0);
 		expect(urls.doiUrls).to.have.lengthOf(0);
+	});
+});
+
+describe('extractUniqueIds', () => {
+	it('should extract and deduplicate all identifier types', () => {
+		const content = `
+			https://pubmed.ncbi.nlm.nih.gov/38570095/
+			https://pubmed.ncbi.nlm.nih.gov/38570095/
+			https://pubmed.ncbi.nlm.nih.gov/12345678/
+			https://pmc.ncbi.nlm.nih.gov/articles/PMC6792392/
+			https://pmc.ncbi.nlm.nih.gov/PMC6792392/
+			https://doi.org/10.1016/j.clinme.2024.100038
+			https://dx.doi.org/10.1016/j.clinme.2024.100038
+		`;
+		const ids = extractUniqueIds(content);
+		expect(ids.pubmedIds).to.have.members(['38570095', '12345678']);
+		expect(ids.pmcIds).to.have.members(['PMC6792392']);
+		expect(ids.dois).to.have.members(['10.1016/j.clinme.2024.100038']);
+	});
+
+	it('should return empty arrays when no URLs are present', () => {
+		const ids = extractUniqueIds('Just some regular text without any links.');
+		expect(ids.pubmedIds).to.have.lengthOf(0);
+		expect(ids.pmcIds).to.have.lengthOf(0);
+		expect(ids.dois).to.have.lengthOf(0);
 	});
 });
