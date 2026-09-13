@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.4.8] - 2026-09-13
+
+### Fixed
+- Fixed `version-bump.mjs` failing on machines where Node is not installed in a system directory — the hardened PATH now includes the running Node's own bin directory so `env node` shebangs resolve.
+
+### Changed
+- Synced agent and testing docs (AGENTS.md, CLAUDE.md, DEVIN.md, WINDSURF.md, RELEASE.md, TESTING.md, tests/README.md) with current tooling: Vitest 4, Node 24 CI, tracked `main.js`, configured sentence-case proper nouns, and corrected coverage thresholds.
+
 ## [1.4.7] - 2026-09-13
 
 ### Added
