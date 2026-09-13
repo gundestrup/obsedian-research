@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.11] - 2026-09-13
+
 ### Fixed
 
 - Fixed supported-formats examples in the README rendering as broken relative links; they are now literal code text.
