@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed supported-formats examples in the README rendering as broken relative links; they are now literal code text.
+- Removed the hardcoded unit test count from the README to avoid recurring drift.
+- Added PMC to the `manifest.json` description shown in Obsidian's plugin list.
+
+### Changed
+
+- `version-bump.mjs` now syncs `manifest.json` `description` from the README tagline on every release to prevent drift.
+
 ## [1.4.10] - 2026-09-13
 
 ### Fixed

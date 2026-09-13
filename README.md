@@ -48,9 +48,9 @@ Fetch article metadata from PubMed, PMC, and DOI links automatically.
 
 | Type | Example | Result |
 |------|---------|--------|
-| PubMed ID | `38570095` | 📚 Review: [Title](link) - Year, Journal |
-| PMC ID | `PMC6792392` | 📚 Article: [Title](link) - Year, Journal [📄](full-text) |
-| DOI | `10.1016/j.clinme.2024.100038` | 🔗 Article: [Title](link) - Year, Journal |
+| PubMed ID | `38570095` | `📚 Review: [Title](link) - Year, Journal` |
+| PMC ID | `PMC6792392` | `📚 Article: [Title](link) - Year, Journal [📄](full-text)` |
+| DOI | `10.1016/j.clinme.2024.100038` | `🔗 Article: [Title](link) - Year, Journal` |
 
 ## Settings
 
@@ -68,7 +68,7 @@ npm run lint         # Check code quality
 
 ## Testing
 
-- **Unit Tests**: 157 tests covering core functionality
+- **Unit Tests**: Comprehensive suite covering core functionality
 - **Coverage**: URL extraction, formatting, duplicate detection, API parsing (80% threshold enforced in CI)
 
 ## API Sources

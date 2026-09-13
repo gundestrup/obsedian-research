@@ -118,6 +118,19 @@ if (isPreversion) {
     let manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
     const { minAppVersion } = manifest;
     manifest.version = targetVersion;
+
+    // Sync description with the README tagline (first text line after the title)
+    const readmeLines = readFileSync("README.md", "utf8").split(/\r?\n/);
+    const titleIndex = readmeLines.findIndex((line) => line.startsWith("# "));
+    const tagline = readmeLines.slice(titleIndex + 1).find((line) => {
+        const trimmed = line.trim();
+        return trimmed !== "" && !trimmed.startsWith("[") && !trimmed.startsWith("<") && !trimmed.startsWith("!");
+    });
+    if (tagline) {
+        manifest.description = tagline.trim();
+        console.log(`  ✅ Synced manifest.json description from README tagline`);
+    }
+
     writeFileSync("manifest.json", JSON.stringify(manifest, null, "\t"));
     console.log(`  ✅ Updated manifest.json to v${targetVersion}`);
     
