@@ -5,19 +5,23 @@
 ## [1.4.8] - 2026-09-13
 
 ### Fixed
+
 - Fixed `version-bump.mjs` failing on machines where Node is not installed in a system directory — the hardened PATH now includes the running Node's own bin directory so `env node` shebangs resolve.
 
 ### Changed
+
 - Synced agent and testing docs (AGENTS.md, CLAUDE.md, DEVIN.md, WINDSURF.md, RELEASE.md, TESTING.md, tests/README.md) with current tooling: Vitest 4, Node 24 CI, tracked `main.js`, configured sentence-case proper nouns, and corrected coverage thresholds.
 
 ## [1.4.7] - 2026-09-13
 
 ### Added
+
 - Added unit tests for `extractUniqueIds`, the `isPubMedIdCited`/`isPMCIdCited`/`isDOICited` helpers, `isAlreadyCited` title-and-year detection, and NCBI API key request parameters.
 - Upload coverage reports to Codecov from CI.
 - Added release, license, CodeQL, Dependabot, Codecov, and minimum Obsidian version badges to the README.
 
 ### Changed
+
 - Excluded the generated `main.js` bundle from SonarCloud analysis via `.sonarcloud.properties`, removing the bulk of reported code duplication.
 - Refactored the extraction and replacement unit tests into table-driven `it.each`/`describe.each` cases to eliminate duplicated test blocks.
 - Classified `tests/` as test code in SonarCloud via `sonar.tests`, fixing the duplication quality gate failure.
@@ -27,30 +31,36 @@
 - Reached 100 percent statement, branch, function, and line coverage on unit-testable modules.
 
 ### Removed
+
 - Removed the unused `escapeRegex` helper.
 - Removed unreachable branches in citation-link detection: a dead marker guard in `hasMarkedMarkdownLink` and the redundant `🔗` DOI-link check subsumed by the unmarked scan.
 
 ## [1.4.6] - 2026-09-11
 
 ### Fixed
+
 - Resolved the remaining SonarQube PATH-resolution finding for Git invocation in the release script.
 
 ## [1.4.5] - 2026-09-11
 
 ### Fixed
+
 - Documented the fixed release-script PATH as an intentional SonarQube S4036 suppression.
 
 ## [1.4.4] - 2026-09-11
 
 ### Fixed
+
 - Restricted the release script PATH to fixed system directories to clear the remaining SonarQube S4036 finding.
 
 ## [1.4.3] - 2026-09-11
 
 ### Added
+
 - Added a SonarQube Cloud quality gate badge to the README.
 
 ### Changed
+
 - Updated release actions to Node.js 24-compatible versions to remove deprecated Node.js 20 action runtimes.
 - Configured Dependabot to defer TypeScript 7 and Vitest 5 major updates until their compatibility migrations are reviewed.
 - Pinned Vitest and `@vitest/coverage-v8` to the patched 4.1.11 release for CVE-2026-84373.
@@ -59,6 +69,7 @@
 ## [1.4.2] - 2026-09-10
 
 ### Changed
+
 - Updated CI and release workflows to Node.js 24 and Node 24-compatible GitHub Actions.
 - Split Semgrep CI dashboard scanning from the local custom-rule scan.
 - Refactored note and vault batch processing into focused article-link helpers.
@@ -66,12 +77,14 @@
 ## [1.4.1] - 2026-09-10
 
 ### Added
+
 - Added Semgrep Pro security scanning configuration and CI integration.
 - Added CodeFactor configuration and README status badges.
 - Added weekly Dependabot updates with a seven-day cooldown.
 - Added build provenance attestations for release artifacts.
 
 ### Changed
+
 - **AI_INSTRUCTIONS.md → AGENTS.md**: Renamed to follow the agents.md open convention. AGENTS.md is now the single source of truth for all coding agents. `CLAUDE.md`, `DEVIN.md`, and `WINDSURF.md` updated to point to `AGENTS.md`.
 - Pinned GitHub Actions to immutable commit SHAs for supply-chain security.
 - Pinned TypeScript to 5.9.3 for reproducible builds.
@@ -79,6 +92,7 @@
 - Replaced dynamic regular expressions and logging format strings with safer implementations.
 
 ### Fixed
+
 - Resolved all findings from the local Semgrep Pro scan.
 - Resolved CodeQL findings for version escaping and DOI parsing.
 - Updated TypeScript configuration for modern module resolution and Obsidian-compatible timer usage.
@@ -86,6 +100,7 @@
 ## [1.4.0] - 2026-07-24
 
 ### Changed
+
 - **Declarative settings API**: Migrated `settings.ts` from deprecated `display()` to `getSettingDefinitions()` (Obsidian 1.13+), enabling settings search
 - **Dependency upgrades**: Updated all devDependencies to latest compatible versions
   - `@types/node` 22 → 26
@@ -98,6 +113,7 @@
 - **AI_INSTRUCTIONS.md**: Updated URL formatting and code block language tags
 
 ### Fixed
+
 - **Lint warnings**: Removed all `eslint-disable` comments for `obsidianmd/ui/sentence-case` (no longer needed with proper rule config)
 - **Settings search**: Plugin settings now appear in Obsidian's global settings search
 
